@@ -6,7 +6,7 @@ messaging (Yahoo Messenger–style). The brand mark is the five-light F1 start
 sequence — it lights up in the navbar and on the homepage, and doubles as a
 ready-made loading animation anywhere else you need one. No coding
 experience needed to get it live — you're mostly clicking buttons on two
-websites: **Supabase** (your database + logins) and **Vercel** (hosting).
+ websites: **Supabase** (your database + logins) and **Vercel** (hosting).
 
 Budget about 30–45 minutes for first setup.
 
