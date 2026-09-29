@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Rajdhani", var(--font-body);
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+body {
+  background-color: #0b0e11;
+  color: #f3f1ec;
+}
+
+/* Thin, high-contrast scrollbar — feels closer to a dashboard than a webpage */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a4250;
+  border-radius: 3px;
+}
+
+/* Retro messenger chat bubble */
+.bubble-mine {
+  background: #2fbf71;
+  color: #0b0e11;
+  border-radius: 10px 10px 2px 10px;
+}
+.bubble-theirs {
+  background: #1b2027;
+  color: #f3f1ec;
+  border-radius: 10px 10px 10px 2px;
+  border: 1px solid #262c35;
+}

@@ -1,0 +1,107 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+const CATEGORIES = [
+  { value: "transport", label: "Transport" },
+  { value: "hotel", label: "Hotel" },
+  { value: "food", label: "Food" },
+  { value: "nightlife", label: "Nightlife" },
+] as const;
+
+export default function GuideComposer({
+  raceEventId,
+  userId,
+}: {
+  raceEventId: string;
+  userId: string;
+}) {
+  const supabase = createClient();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [category, setCategory] =
+    useState<(typeof CATEGORIES)[number]["value"]>("transport");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit() {
+    if (!title.trim() || !content.trim()) return;
+    setSaving(true);
+    const { error } = await supabase.from("guide_entries").insert({
+      race_event_id: raceEventId,
+      author_id: userId,
+      category,
+      title: title.trim(),
+      content: content.trim(),
+    });
+    setSaving(false);
+    if (!error) {
+      setTitle("");
+      setContent("");
+      setOpen(false);
+      router.refresh();
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="rounded-sm border border-dashed border-asphalt-600 px-3 py-1.5 text-sm text-paper/70 hover:border-flag-amber hover:text-flag-amber"
+      >
+        + Add a tip
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-sm border border-asphalt-700 bg-asphalt-900 p-4">
+      <div className="flex flex-wrap gap-2">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.value}
+            onClick={() => setCategory(c.value)}
+            className={`rounded-sm border px-2.5 py-1 text-xs font-mono uppercase tracking-wide ${
+              category === c.value
+                ? "border-flag-amber text-flag-amber"
+                : "border-asphalt-600 text-paper/60"
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Short title, e.g. 'Skip the taxi line, take the shuttle'"
+        className="mt-3 w-full rounded-sm border border-asphalt-600 bg-asphalt-950 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red"
+      />
+      <textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        rows={3}
+        placeholder="The actual tip — be specific."
+        className="mt-2 w-full resize-none rounded-sm border border-asphalt-600 bg-asphalt-950 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red"
+      />
+      <div className="mt-2 flex justify-end gap-2">
+        <button
+          onClick={() => setOpen(false)}
+          className="px-3 py-1.5 text-sm text-paper/60 hover:text-paper"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={saving}
+          className="rounded-sm bg-flag-amber px-4 py-1.5 text-sm font-medium text-asphalt-950 hover:bg-flag-amber/90 disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save tip"}
+        </button>
+      </div>
+    </div>
+  );
+}
