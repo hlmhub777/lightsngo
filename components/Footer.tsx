@@ -12,6 +12,11 @@ export default function Footer() {
           Privacy Policy
         </Link>
       </div>
+      <p className="mx-auto mt-2 max-w-5xl px-4 text-center text-[11px] leading-relaxed text-paper/30">
+        LightsNGo is an independent fan community. It is not affiliated
+        with, endorsed by, or sponsored by Formula 1, FIA, Liberty Media, or
+        any F1 team.
+      </p>
     </footer>
   );
 }

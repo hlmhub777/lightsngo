@@ -3,6 +3,7 @@ import { Rajdhani, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CookieNotice from "@/components/CookieNotice";
 
 const rajdhani = Rajdhani({
   subsets: ["latin"],
@@ -39,6 +40,7 @@ export default function RootLayout({
         <Navbar />
         <main>{children}</main>
         <Footer />
+        <CookieNotice />
       </body>
     </html>
   );

@@ -217,10 +217,33 @@ alter publication supabase_realtime add table public.chat_messages;
 alter publication supabase_realtime add table public.direct_messages;
 
 -- ------------------------------------------------------------
--- Seed a couple of race events so the app isn't empty on first run
+-- Seed the full official 2027 F1 calendar (24 rounds), announced
+-- September 16, 2026. race_date is the Sunday/final day of each
+-- race weekend.
 -- ------------------------------------------------------------
 insert into public.race_events (slug, name, city, country, circuit_name, season_year, race_date)
 values
-  ('monza-2027', 'Italian Grand Prix', 'Monza', 'Italy', 'Autodromo Nazionale Monza', 2027, '2027-09-05'),
-  ('monaco-2027', 'Monaco Grand Prix', 'Monte Carlo', 'Monaco', 'Circuit de Monaco', 2027, '2027-05-23'),
-  ('spa-2027', 'Belgian Grand Prix', 'Spa-Francorchamps', 'Belgium', 'Circuit de Spa-Francorchamps', 2027, '2027-07-25');
+  ('bahrain-2027', 'Bahrain Grand Prix', 'Sakhir', 'Bahrain', 'Bahrain International Circuit', 2027, '2027-03-14'),
+  ('saudi-arabia-2027', 'Saudi Arabian Grand Prix', 'Jeddah', 'Saudi Arabia', 'Jeddah Corniche Circuit', 2027, '2027-03-21'),
+  ('australia-2027', 'Australian Grand Prix', 'Melbourne', 'Australia', 'Albert Park Circuit', 2027, '2027-04-04'),
+  ('japan-2027', 'Japanese Grand Prix', 'Suzuka', 'Japan', 'Suzuka Circuit', 2027, '2027-04-11'),
+  ('china-2027', 'Chinese Grand Prix', 'Shanghai', 'China', 'Shanghai International Circuit', 2027, '2027-04-18'),
+  ('miami-2027', 'Miami Grand Prix', 'Miami', 'United States', 'Miami International Autodrome', 2027, '2027-05-02'),
+  ('canada-2027', 'Canadian Grand Prix', 'Montreal', 'Canada', 'Circuit Gilles Villeneuve', 2027, '2027-05-23'),
+  ('monaco-2027', 'Monaco Grand Prix', 'Monte Carlo', 'Monaco', 'Circuit de Monaco', 2027, '2027-06-06'),
+  ('portugal-2027', 'Portuguese Grand Prix', 'Portimão', 'Portugal', 'Autódromo do Algarve', 2027, '2027-06-20'),
+  ('britain-2027', 'British Grand Prix', 'Silverstone', 'United Kingdom', 'Silverstone Circuit', 2027, '2027-07-04'),
+  ('austria-2027', 'Austrian Grand Prix', 'Spielberg', 'Austria', 'Red Bull Ring', 2027, '2027-07-11'),
+  ('belgium-2027', 'Belgian Grand Prix', 'Spa-Francorchamps', 'Belgium', 'Circuit de Spa-Francorchamps', 2027, '2027-07-25'),
+  ('hungary-2027', 'Hungarian Grand Prix', 'Budapest', 'Hungary', 'Hungaroring', 2027, '2027-08-01'),
+  ('italy-2027', 'Italian Grand Prix', 'Monza', 'Italy', 'Autodromo Nazionale Monza', 2027, '2027-09-05'),
+  ('spain-2027', 'Spanish Grand Prix', 'Madrid', 'Spain', 'Madring', 2027, '2027-09-12'),
+  ('azerbaijan-2027', 'Azerbaijan Grand Prix', 'Baku', 'Azerbaijan', 'Baku City Circuit', 2027, '2027-09-26'),
+  ('turkey-2027', 'Turkish Grand Prix', 'Istanbul', 'Turkey', 'Istanbul Park', 2027, '2027-10-03'),
+  ('singapore-2027', 'Singapore Grand Prix', 'Singapore', 'Singapore', 'Marina Bay Street Circuit', 2027, '2027-10-10'),
+  ('usa-2027', 'United States Grand Prix', 'Austin', 'United States', 'Circuit of the Americas', 2027, '2027-10-24'),
+  ('mexico-2027', 'Mexican Grand Prix', 'Mexico City', 'Mexico', 'Autódromo Hermanos Rodríguez', 2027, '2027-10-31'),
+  ('brazil-2027', 'Brazilian Grand Prix', 'São Paulo', 'Brazil', 'Interlagos', 2027, '2027-11-07'),
+  ('las-vegas-2027', 'Las Vegas Grand Prix', 'Las Vegas', 'United States', 'Las Vegas Strip Circuit', 2027, '2027-11-20'),
+  ('qatar-2027', 'Qatar Grand Prix', 'Lusail', 'Qatar', 'Losail International Circuit', 2027, '2027-12-05'),
+  ('abu-dhabi-2027', 'Abu Dhabi Grand Prix', 'Abu Dhabi', 'United Arab Emirates', 'Yas Marina Circuit', 2027, '2027-12-12');
