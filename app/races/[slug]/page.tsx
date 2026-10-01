@@ -1,14 +1,7 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import GuideComposer from "@/components/GuideComposer";
-
-const CATEGORY_LABELS: Record<string, string> = {
-  transport: "Getting around",
-  hotel: "Where to stay",
-  food: "Where to eat",
-  nightlife: "Nightlife",
-};
+import GuideBrowser from "@/components/GuideBrowser";
 
 export default async function RaceHubPage({
   params,
@@ -31,15 +24,9 @@ export default async function RaceHubPage({
 
   const { data: entries } = await supabase
     .from("guide_entries")
-    .select("id, category, title, content, author:profiles(username)")
+    .select("id, category, title, content, created_at, author:profiles(username)")
     .eq("race_event_id", race.id)
     .order("created_at", { ascending: false });
-
-  const grouped = Object.keys(CATEGORY_LABELS).map((cat) => ({
-    key: cat,
-    label: CATEGORY_LABELS[cat],
-    items: (entries ?? []).filter((e: any) => e.category === cat),
-  }));
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -74,40 +61,11 @@ export default async function RaceHubPage({
         specifically, from people actually going. Book early.
       </p>
 
-      <div className="mt-8 flex flex-col gap-8">
-        {grouped.map((group) => (
-          <section key={group.key}>
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-600 text-paper">
-                {group.label}
-              </h2>
-              <GuideComposer raceEventId={race.id} userId={user.id} />
-            </div>
-            <div className="mt-3 flex flex-col gap-2">
-              {group.items.length > 0 ? (
-                group.items.map((item: any) => (
-                  <div
-                    key={item.id}
-                    className="rounded-sm border border-asphalt-700 bg-asphalt-900 p-3"
-                  >
-                    <p className="text-sm font-medium text-paper">
-                      {item.title}
-                    </p>
-                    <p className="mt-1 text-sm text-paper/70">
-                      {item.content}
-                    </p>
-                    <p className="mt-2 font-mono text-[11px] text-paper/40">
-                      — {item.author?.username ?? "a fan"}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-paper/40">No tips yet.</p>
-              )}
-            </div>
-          </section>
-        ))}
-      </div>
+      <GuideBrowser
+        raceEventId={race.id}
+        userId={user.id}
+        entries={(entries as any) ?? []}
+      />
     </div>
   );
 }

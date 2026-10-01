@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import RacesList from "@/components/RacesList";
 
 export default async function RacesPage() {
   const supabase = createClient();
@@ -24,33 +24,7 @@ export default async function RacesPage() {
         who&rsquo;ve actually been.
       </p>
 
-      <div className="mt-6 flex flex-col gap-3">
-        {races?.map((race) => (
-          <Link
-            key={race.slug}
-            href={`/races/${race.slug}`}
-            className="flex items-center justify-between rounded-sm border border-asphalt-700 bg-asphalt-900 px-4 py-3 hover:border-flag-red"
-          >
-            <div>
-              <p className="font-display text-lg font-600 text-paper">
-                {race.name}
-              </p>
-              <p className="text-sm text-paper/60">
-                {race.city}, {race.country}
-              </p>
-            </div>
-            <span className="font-mono text-xs text-paper/50">
-              {race.race_date
-                ? new Date(race.race_date).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })
-                : race.season_year}
-            </span>
-          </Link>
-        ))}
-      </div>
+      <RacesList races={races ?? []} />
     </div>
   );
 }
