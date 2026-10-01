@@ -49,7 +49,8 @@ export default function PrivacyPolicyPage() {
             </li>
             <li>
               <strong>Content you create:</strong> posts, chat room messages,
-              city guide tips, and private messages.
+              city guide tips, and private messages, including any files you
+              attach to them.
             </li>
             <li>
               <strong>Age and consent records:</strong> a timestamp showing
@@ -92,23 +93,66 @@ export default function PrivacyPolicyPage() {
           </p>
           <ul className="ml-5 mt-2 list-disc space-y-1">
             <li>
-              <strong>Supabase</strong> (database, authentication, real-time
-              messaging) — data hosted in [SUPABASE PROJECT REGION].
+              <strong>Supabase</strong> (database, authentication, file
+              storage, real-time messaging) — data hosted in [SUPABASE
+              PROJECT REGION].
             </li>
             <li>
               <strong>Vercel</strong> (hosting the website itself).
             </li>
+            <li>
+              <strong>Resend</strong> (sending account emails, such as
+              sign-up confirmation and password reset). Resend receives your
+              email address and the content of these emails.
+            </li>
+            <li>
+              <strong>hCaptcha</strong> (protecting forms from automated
+              abuse). hCaptcha may process technical data such as your IP
+              address and browser information when you complete a check.
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="mb-2 font-display text-lg font-600 text-paper">
+            5. What other members can see
+          </h2>
+          <p>
+            LightsNGo is a community, so some of your information is shared
+            with other members to help fans find and connect with each other.
+          </p>
+          <ul className="ml-5 mt-2 list-disc space-y-1">
+            <li>
+              <strong>Your profile is visible to all registered members.</strong>{" "}
+              This includes your username, profile photo, country, gender,
+              birth year, the team you support, your favorite driver, the
+              tracks you&rsquo;ve been to, and your bio. People who are not
+              logged in to LightsNGo cannot see your profile.
+            </li>
+            <li>
+              <strong>Content you post publicly</strong> — in the feed, chat
+              rooms, and city guides — is visible to all registered members.
+            </li>
+            <li>
+              <strong>Your email address is never shown</strong> to other
+              members.
+            </li>
+            <li>
+              <strong>Your private messages</strong> and any files you send in
+              them can only be seen by you and the person you are talking to.
+            </li>
           </ul>
           <p className="mt-2">
-            Other users can see content you post publicly (feed, chat rooms,
-            city guide tips) and the profile fields you choose to fill in.
-            Private messages are only visible to you and the recipient.
+            You can change your profile information at any time from your
+            Profile page. For gender, you can choose &ldquo;Prefer not to
+            say&rdquo;. If you delete your account, your profile will no
+            longer be visible to other members.
           </p>
         </section>
 
         <section>
           <h2 className="mb-2 font-display text-lg font-600 text-paper">
-            5. How long we keep it
+            6. How long we keep it
           </h2>
           <p>
             We keep your account and content for as long as your account is
@@ -123,7 +167,7 @@ export default function PrivacyPolicyPage() {
 
         <section>
           <h2 className="mb-2 font-display text-lg font-600 text-paper">
-            6. Your rights (GDPR)
+            7. Your rights (GDPR)
           </h2>
           <p>If you are in the EU/EEA or UK, you have the right to:</p>
           <ul className="ml-5 mt-2 list-disc space-y-1">
@@ -144,7 +188,7 @@ export default function PrivacyPolicyPage() {
 
         <section>
           <h2 className="mb-2 font-display text-lg font-600 text-paper">
-            7. Cookies
+            8. Cookies
           </h2>
           <p>
             We use only the essential cookies needed to keep you logged in
@@ -156,7 +200,7 @@ export default function PrivacyPolicyPage() {
 
         <section>
           <h2 className="mb-2 font-display text-lg font-600 text-paper">
-            8. Age requirement
+            9. Age requirement
           </h2>
           <p>
             LightsNGo is only for people aged 18 and over. We don&rsquo;t
@@ -167,7 +211,7 @@ export default function PrivacyPolicyPage() {
 
         <section>
           <h2 className="mb-2 font-display text-lg font-600 text-paper">
-            9. Changes to this policy
+            10. Changes to this policy
           </h2>
           <p>
             We may update this policy as the platform grows. We&rsquo;ll post
