@@ -28,9 +28,9 @@ create table public.profiles (
 
 alter table public.profiles enable row level security;
 
-create policy "Profiles are viewable by everyone"
+create policy "Profiles are viewable by signed-in users"
   on public.profiles for select
-  using (true);
+  using (auth.role() = 'authenticated');
 
 create policy "Users can update their own profile"
   on public.profiles for update
@@ -101,9 +101,9 @@ create table public.posts (
 
 alter table public.posts enable row level security;
 
-create policy "Posts are viewable by everyone"
+create policy "Posts are viewable by signed-in users"
   on public.posts for select
-  using (true);
+  using (auth.role() = 'authenticated');
 
 create policy "Authenticated users can create posts"
   on public.posts for insert
@@ -127,9 +127,9 @@ create table public.post_likes (
 
 alter table public.post_likes enable row level security;
 
-create policy "Likes are viewable by everyone"
+create policy "Likes are viewable by signed-in users"
   on public.post_likes for select
-  using (true);
+  using (auth.role() = 'authenticated');
 
 create policy "Authenticated users can like a post"
   on public.post_likes for insert
@@ -152,9 +152,9 @@ create table public.post_comments (
 
 alter table public.post_comments enable row level security;
 
-create policy "Comments are viewable by everyone"
+create policy "Comments are viewable by signed-in users"
   on public.post_comments for select
-  using (true);
+  using (auth.role() = 'authenticated');
 
 create policy "Authenticated users can comment"
   on public.post_comments for insert
