@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/Avatar";
 
@@ -45,6 +46,9 @@ export default function DMWindow({
   initialMessages: Message[];
 }) {
   const supabase = createClient();
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -120,8 +124,54 @@ export default function DMWindow({
     });
     if (insertError) {
       setDraft(text);
-      setError(insertError.message);
+      setError(friendlyError(insertError));
     }
+  }
+
+  function friendlyError(err: { code?: string; message: string }) {
+    if (err.code === "42501") {
+      return "You can't message this person anymore — you're no longer contacts.";
+    }
+    return err.message;
+  }
+
+  async function deleteConversation() {
+    setMenuOpen(false);
+    const ok = window.confirm(
+      `Delete your conversation with ${otherUsername}? It will be removed for you only — ${otherUsername} keeps their copy.`
+    );
+    if (!ok) return;
+    setBusy(true);
+    setError(null);
+    const { error: rpcError } = await supabase.rpc("clear_conversation", {
+      other_id: otherUserId,
+    });
+    setBusy(false);
+    if (rpcError) {
+      setError(rpcError.message);
+      return;
+    }
+    setMessages([]);
+  }
+
+  async function removeContact() {
+    setMenuOpen(false);
+    const ok = window.confirm(
+      `Remove ${otherUsername} from your contacts? You won't be able to message each other anymore, and this conversation will be deleted for you.`
+    );
+    if (!ok) return;
+    setBusy(true);
+    setError(null);
+    const { error: rpcError } = await supabase.rpc("remove_contact", {
+      other_id: otherUserId,
+    });
+    if (rpcError) {
+      setBusy(false);
+      setError(rpcError.message);
+      return;
+    }
+    router.push("/messages");
+    router.refresh();
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -163,16 +213,44 @@ export default function DMWindow({
     });
 
     setUploading(false);
-    if (insertError) setError(insertError.message);
+    if (insertError) setError(friendlyError(insertError));
   }
 
   return (
     <div className="flex h-[70vh] flex-col rounded-sm border border-asphalt-700 bg-asphalt-900">
-      <div className="border-b border-asphalt-700 px-4 py-2.5">
+      <div className="relative flex items-center justify-between border-b border-asphalt-700 px-4 py-2.5">
         <span className="inline-flex items-center gap-3 text-sm text-paper">
           <Avatar url={otherAvatarUrl} name={otherUsername} size={32} />
           {otherUsername}
         </span>
+        <button
+          type="button"
+          onClick={() => setMenuOpen((o) => !o)}
+          disabled={busy}
+          aria-label="Conversation options"
+          aria-expanded={menuOpen}
+          className="rounded-sm px-2 py-1 text-lg leading-none text-paper/60 hover:bg-asphalt-800 hover:text-paper disabled:opacity-50"
+        >
+          ⋯
+        </button>
+        {menuOpen && (
+          <div className="absolute right-3 top-full z-10 mt-1 w-52 rounded-sm border border-asphalt-700 bg-asphalt-950 py-1 shadow-lg">
+            <button
+              type="button"
+              onClick={deleteConversation}
+              className="block w-full px-3 py-2 text-left text-sm text-paper/80 hover:bg-asphalt-800 hover:text-paper"
+            >
+              Delete conversation
+            </button>
+            <button
+              type="button"
+              onClick={removeContact}
+              className="block w-full px-3 py-2 text-left text-sm text-flag-red hover:bg-asphalt-800"
+            >
+              Remove contact
+            </button>
+          </div>
+        )}
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {messages.map((m) => {

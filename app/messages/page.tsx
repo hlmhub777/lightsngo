@@ -1,124 +1,78 @@
+import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import AddContactSearch from "@/components/AddContactSearch";
-import AcceptContactButton from "@/components/AcceptContactButton";
-import Avatar from "@/components/Avatar";
+import DMWindow from "@/components/DMWindow";
 
-export default async function MessagesPage() {
+export default async function DMThreadPage({
+  params,
+}: {
+  params: { contactId: string };
+}) {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: rows } = await supabase
+  // Confirm the two of you are actually accepted contacts before opening the thread.
+  const { data: contactRow } = await supabase
     .from("contacts")
-    .select(
-      "id, status, requester_id, recipient_id, requester:profiles!contacts_requester_id_fkey(id, username, avatar_url), recipient:profiles!contacts_recipient_id_fkey(id, username, avatar_url)"
+    .select("status, requester_id, recipient_id")
+    .or(
+      `and(requester_id.eq.${user.id},recipient_id.eq.${params.contactId}),and(requester_id.eq.${params.contactId},recipient_id.eq.${user.id})`
     )
-    .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`);
+    .eq("status", "accepted")
+    .maybeSingle();
 
-  const accepted =
-    rows?.filter((r: any) => r.status === "accepted").map((r: any) => {
-      const other = r.requester_id === user.id ? r.recipient : r.requester;
-      return other;
-    }) ?? [];
+  if (!contactRow) notFound();
 
-  const incomingRequests =
-    rows?.filter((r: any) => r.status === "pending" && r.recipient_id === user.id) ??
-    [];
+  const { data: otherProfile } = await supabase
+    .from("profiles")
+    .select("username, avatar_url")
+    .eq("id", params.contactId)
+    .single();
 
-  const outgoingRequests =
-    rows?.filter((r: any) => r.status === "pending" && r.requester_id === user.id) ??
-    [];
+  if (!otherProfile) notFound();
+
+  // If this user deleted the conversation before, only show newer messages.
+  const { data: clearRow } = await supabase
+    .from("conversation_clears")
+    .select("cleared_at")
+    .eq("user_id", user.id)
+    .eq("other_user_id", params.contactId)
+    .maybeSingle();
+
+  let messagesQuery = supabase
+    .from("direct_messages")
+    .select(
+      "id, content, created_at, sender_id, recipient_id, attachment_path, attachment_name, attachment_type, attachment_size"
+    )
+    .or(
+      `and(sender_id.eq.${user.id},recipient_id.eq.${params.contactId}),and(sender_id.eq.${params.contactId},recipient_id.eq.${user.id})`
+    );
+
+  if (clearRow?.cleared_at) {
+    messagesQuery = messagesQuery.gt("created_at", clearRow.cleared_at);
+  }
+
+  const { data: rawMessages } = await messagesQuery
+    .order("created_at", { ascending: true })
+    .limit(200);
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8">
-      <h1 className="font-display text-2xl font-700 text-paper">Messages</h1>
-      <p className="mt-1 text-sm text-paper/60">
-        Your contact list — add fans you meet in a race chat or on the feed.
-      </p>
-
-      <div className="mt-6">
-        <AddContactSearch userId={user.id} />
+      <Link href="/messages" className="text-sm text-paper/60 hover:text-paper">
+        ← Contacts
+      </Link>
+      <div className="mt-3">
+        <DMWindow
+          currentUserId={user.id}
+          otherUserId={params.contactId}
+          otherUsername={otherProfile.username}
+          otherAvatarUrl={otherProfile.avatar_url}
+          initialMessages={rawMessages ?? []}
+        />
       </div>
-
-      {incomingRequests.length > 0 && (
-        <div className="mt-6">
-          <h2 className="font-mono text-xs uppercase tracking-widest text-paper/50">
-            Requests
-          </h2>
-          <div className="mt-2 flex flex-col gap-2">
-            {incomingRequests.map((r: any) => (
-              <div
-                key={r.id}
-                className="flex items-center justify-between rounded-sm border border-asphalt-700 bg-asphalt-900 px-3 py-2"
-              >
-                <span className="inline-flex items-center gap-3 text-sm text-paper">
-                  <Avatar
-                    url={r.requester.avatar_url}
-                    name={r.requester.username}
-                    size={32}
-                  />
-                  {r.requester.username}
-                </span>
-                <AcceptContactButton contactRowId={r.id} />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-6">
-        <h2 className="font-mono text-xs uppercase tracking-widest text-paper/50">
-          Contacts — {accepted.length} in your paddock
-        </h2>
-        <div className="mt-2 flex flex-col gap-1">
-          {accepted.length > 0 ? (
-            accepted.map((c: any) => (
-              <Link
-                key={c.id}
-                href={`/messages/${c.id}`}
-                className="flex items-center gap-3 rounded-sm px-3 py-2 hover:bg-asphalt-900"
-              >
-                <Avatar url={c.avatar_url} name={c.username} size={36} />
-                <span className="text-sm text-paper">{c.username}</span>
-              </Link>
-            ))
-          ) : (
-            <p className="px-3 py-2 text-sm text-paper/40">
-              No contacts yet — search above or meet someone in a race chat
-              room.
-            </p>
-          )}
-        </div>
-      </div>
-
-      {outgoingRequests.length > 0 && (
-        <div className="mt-6">
-          <h2 className="font-mono text-xs uppercase tracking-widest text-paper/50">
-            Pending
-          </h2>
-          <div className="mt-2 flex flex-col gap-1">
-            {outgoingRequests.map((r: any) => (
-              <div
-                key={r.id}
-                className="flex items-center gap-3 px-3 py-2 text-sm text-paper/40"
-              >
-                <span className="opacity-60">
-                  <Avatar
-                    url={r.recipient.avatar_url}
-                    name={r.recipient.username}
-                    size={28}
-                  />
-                </span>
-                {r.recipient.username} — waiting for them to accept
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
