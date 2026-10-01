@@ -107,6 +107,23 @@ export default function ChatWindow({
     setMessages((prev) => prev.filter((m) => m.id !== id));
   }
 
+  async function blockAuthor(authorId: string, username?: string) {
+    const name = username ?? "this user";
+    const ok = window.confirm(
+      `Block ${name}? You won't see their messages, posts or tips anymore, and they won't be able to message you. They won't be notified. You can unblock them later from your profile.`
+    );
+    if (!ok) return;
+    setError(null);
+    const { error: rpcError } = await supabase.rpc("block_user", {
+      other_id: authorId,
+    });
+    if (rpcError) {
+      setError("Couldn't block this user. Please try again.");
+      return;
+    }
+    setMessages((prev) => prev.filter((m) => m.author_id !== authorId));
+  }
+
   return (
     <div className="flex h-[70vh] flex-col rounded-sm border border-asphalt-700 bg-asphalt-900">
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
@@ -129,13 +146,21 @@ export default function ChatWindow({
                 )}
                 <p>{m.content}</p>
               </div>
-              {mine && (
+              {mine ? (
                 <button
                   type="button"
                   onClick={() => deleteMessage(m.id)}
                   className="mt-0.5 text-[11px] text-paper/30 hover:text-flag-red"
                 >
                   Delete
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => blockAuthor(m.author_id, m.author_username)}
+                  className="mt-0.5 text-[11px] text-paper/30 hover:text-flag-red"
+                >
+                  Block
                 </button>
               )}
             </div>

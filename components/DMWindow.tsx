@@ -174,6 +174,26 @@ export default function DMWindow({
     router.refresh();
   }
 
+  async function blockUser() {
+    setMenuOpen(false);
+    const ok = window.confirm(
+      `Block ${otherUsername}? They won't be able to message you or add you as a contact, you won't see their posts, tips or chat messages, and this conversation will be deleted for you. They won't be notified. You can unblock them later from your profile.`
+    );
+    if (!ok) return;
+    setBusy(true);
+    setError(null);
+    const { error: rpcError } = await supabase.rpc("block_user", {
+      other_id: otherUserId,
+    });
+    if (rpcError) {
+      setBusy(false);
+      setError("Couldn't block this user. Please try again.");
+      return;
+    }
+    router.push("/messages");
+    router.refresh();
+  }
+
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -248,6 +268,13 @@ export default function DMWindow({
               className="block w-full px-3 py-2 text-left text-sm text-flag-red hover:bg-asphalt-800"
             >
               Remove contact
+            </button>
+            <button
+              type="button"
+              onClick={blockUser}
+              className="block w-full px-3 py-2 text-left text-sm text-flag-red hover:bg-asphalt-800"
+            >
+              Block user
             </button>
           </div>
         )}

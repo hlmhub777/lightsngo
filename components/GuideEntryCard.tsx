@@ -115,6 +115,28 @@ export default function GuideEntryCard({
     setReplies((prev) => prev.filter((r) => r.id !== replyId));
   }
 
+  async function blockAuthor(authorId: string, username?: string) {
+    const name = username ?? "this user";
+    const ok = window.confirm(
+      `Block ${name}? You won't see their tips, posts or chat messages anymore, and they won't be able to message you. They won't be notified. You can unblock them later from your profile.`
+    );
+    if (!ok) return;
+    setError(null);
+    const { error: rpcError } = await supabase.rpc("block_user", {
+      other_id: authorId,
+    });
+    if (rpcError) {
+      setError("Couldn't block this user. Please try again.");
+      return;
+    }
+    if (authorId === item.author_id) {
+      setDeleted(true);
+    } else {
+      setReplies((prev) => prev.filter((r) => r.author_id !== authorId));
+    }
+    router.refresh();
+  }
+
   if (deleted) return null;
 
   return (
@@ -160,6 +182,17 @@ export default function GuideEntryCard({
             Delete
           </button>
         )}
+
+        {userId && !isMine && (
+          <button
+            type="button"
+            onClick={() => blockAuthor(item.author_id, item.author?.username)}
+            disabled={busy}
+            className="text-xs text-paper/40 hover:text-flag-red disabled:opacity-50"
+          >
+            Block
+          </button>
+        )}
       </div>
 
       {replies.length > 0 && (
@@ -186,6 +219,15 @@ export default function GuideEntryCard({
                     className="text-[11px] text-paper/40 hover:text-flag-red"
                   >
                     Delete
+                  </button>
+                )}
+                {userId && userId !== r.author_id && (
+                  <button
+                    type="button"
+                    onClick={() => blockAuthor(r.author_id, r.author?.username)}
+                    className="text-[11px] text-paper/40 hover:text-flag-red"
+                  >
+                    Block
                   </button>
                 )}
               </div>
