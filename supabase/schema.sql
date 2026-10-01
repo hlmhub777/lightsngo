@@ -28,9 +28,9 @@ create table public.profiles (
 
 alter table public.profiles enable row level security;
 
-create policy "Profiles are viewable by everyone"
+create policy "Profiles are viewable by signed-in users"
   on public.profiles for select
-  using (true);
+  using (auth.role() = 'authenticated');
 
 create policy "Users can update their own profile"
   on public.profiles for update
@@ -101,9 +101,9 @@ create table public.posts (
 
 alter table public.posts enable row level security;
 
-create policy "Posts are viewable by everyone"
+create policy "Posts are viewable by signed-in users"
   on public.posts for select
-  using (true);
+  using (auth.role() = 'authenticated');
 
 create policy "Authenticated users can create posts"
   on public.posts for insert
@@ -127,9 +127,9 @@ create table public.post_likes (
 
 alter table public.post_likes enable row level security;
 
-create policy "Likes are viewable by everyone"
+create policy "Likes are viewable by signed-in users"
   on public.post_likes for select
-  using (true);
+  using (auth.role() = 'authenticated');
 
 create policy "Authenticated users can like a post"
   on public.post_likes for insert
@@ -152,9 +152,9 @@ create table public.post_comments (
 
 alter table public.post_comments enable row level security;
 
-create policy "Comments are viewable by everyone"
+create policy "Comments are viewable by signed-in users"
   on public.post_comments for select
-  using (true);
+  using (auth.role() = 'authenticated');
 
 create policy "Authenticated users can comment"
   on public.post_comments for insert
@@ -430,6 +430,125 @@ create trigger rate_limit_chat_trigger
 create trigger rate_limit_dms_trigger
   before insert on public.direct_messages
   for each row execute procedure public.rate_limit_dms();
+
+create or replace function public.rate_limit_contacts()
+returns trigger as $$
+begin
+  if (select count(*) from public.contacts
+      where requester_id = new.requester_id
+        and created_at > now() - interval '10 minutes') >= 20 then
+    raise exception 'You are sending too many contact requests — please slow down.'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace function public.rate_limit_guide_entries()
+returns trigger as $$
+begin
+  if (select count(*) from public.guide_entries
+      where author_id = new.author_id
+        and created_at > now() - interval '10 minutes') >= 10 then
+    raise exception 'You are posting too many tips too fast — please slow down.'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger rate_limit_contacts_trigger
+  before insert on public.contacts
+  for each row execute procedure public.rate_limit_contacts();
+
+create trigger rate_limit_guide_entries_trigger
+  before insert on public.guide_entries
+  for each row execute procedure public.rate_limit_guide_entries();
+
+-- ------------------------------------------------------------
+-- FILE STORAGE: profile photos + DM attachments
+-- ------------------------------------------------------------
+
+-- Profile photos — public bucket (anyone with the link can view the
+-- image itself, same as most apps' avatars), but each user can only
+-- upload/replace/delete files inside their own folder (named after
+-- their user id).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 2097152, array['image/jpeg','image/png','image/gif','image/webp'])
+on conflict (id) do nothing;
+
+create policy "Avatar images are publicly accessible"
+  on storage.objects for select
+  using (bucket_id = 'avatars');
+
+create policy "Users can upload their own avatar"
+  on storage.objects for insert
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Users can update their own avatar"
+  on storage.objects for update
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Users can delete their own avatar"
+  on storage.objects for delete
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- DM attachments — private bucket (5MB limit, images + PDF only).
+-- Files live under a folder named after both participants' ids
+-- (sorted), so only those two people's RLS ever matches the path.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('dm-attachments', 'dm-attachments', false, 5242880, array['image/jpeg','image/png','image/gif','image/webp','application/pdf'])
+on conflict (id) do nothing;
+
+create policy "Participants can view their DM attachments"
+  on storage.objects for select
+  using (
+    bucket_id = 'dm-attachments'
+    and auth.uid()::text in ((storage.foldername(name))[1], (storage.foldername(name))[2])
+  );
+
+create policy "Participants can upload DM attachments"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'dm-attachments'
+    and auth.uid()::text in ((storage.foldername(name))[1], (storage.foldername(name))[2])
+  );
+
+-- Let a direct message optionally carry a file instead of (or alongside) text.
+alter table public.direct_messages
+  alter column content drop not null,
+  add column if not exists attachment_path text,
+  add column if not exists attachment_name text,
+  add column if not exists attachment_type text,
+  add column if not exists attachment_size bigint;
+
+alter table public.direct_messages
+  drop constraint if exists direct_messages_has_content_or_attachment,
+  add constraint direct_messages_has_content_or_attachment
+    check (content is not null or attachment_path is not null);
+
+-- ------------------------------------------------------------
+-- ACCOUNT DELETION
+-- Lets a logged-in user permanently delete their own account.
+-- Deleting the auth.users row cascades through "on delete cascade"
+-- to their profile and everything tied to it (posts, comments,
+-- likes, guide entries, chat messages, contacts, DMs). This
+-- function can only ever delete the CALLER's own row — there is
+-- no way to pass in someone else's id.
+-- ------------------------------------------------------------
+create or replace function public.delete_user_account()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+revoke all on function public.delete_user_account() from public;
+grant execute on function public.delete_user_account() to authenticated;
 
 -- ------------------------------------------------------------
 -- Realtime: broadcast changes for chat + DMs

@@ -48,8 +48,19 @@ export default function PostCard({
   return (
     <article className="rounded-sm border border-asphalt-700 bg-asphalt-900 p-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-asphalt-700 font-mono text-xs text-paper/80">
-          {initials}
+        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-asphalt-700">
+          {post.author?.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={post.author.avatar_url}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center font-mono text-xs text-paper/80">
+              {initials}
+            </div>
+          )}
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-paper">

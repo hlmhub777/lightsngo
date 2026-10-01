@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import Captcha from "@/components/Captcha";
+import Captcha, { type CaptchaHandle } from "@/components/Captcha";
+import PasswordInput from "@/components/PasswordInput";
 
 const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
 
@@ -17,6 +18,7 @@ export default function LoginPage() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const captchaRef = useRef<CaptchaHandle>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,6 +41,8 @@ export default function LoginPage() {
 
     if (signInError) {
       setError(signInError.message);
+      setCaptchaToken(null);
+      captchaRef.current?.reset();
       return;
     }
 
@@ -62,17 +66,20 @@ export default function LoginPage() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm text-paper/70">Password</label>
-          <input
-            required
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-sm border border-asphalt-600 bg-asphalt-900 px-3 py-2 text-paper outline-none focus:border-flag-red"
-          />
+          <div className="mb-1 flex items-center justify-between">
+            <label className="text-sm text-paper/70">Password</label>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-flag-amber hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <PasswordInput value={password} onChange={setPassword} />
         </div>
 
         <Captcha
+          ref={captchaRef}
           onVerify={(token) => setCaptchaToken(token)}
           onExpire={() => setCaptchaToken(null)}
         />

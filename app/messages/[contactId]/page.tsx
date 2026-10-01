@@ -36,7 +36,9 @@ export default async function DMThreadPage({
 
   const { data: rawMessages } = await supabase
     .from("direct_messages")
-    .select("id, content, created_at, sender_id, recipient_id")
+    .select(
+      "id, content, created_at, sender_id, recipient_id, attachment_path, attachment_name, attachment_type, attachment_size"
+    )
     .or(
       `and(sender_id.eq.${user.id},recipient_id.eq.${params.contactId}),and(sender_id.eq.${params.contactId},recipient_id.eq.${user.id})`
     )

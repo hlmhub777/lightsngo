@@ -9,13 +9,15 @@ export default async function Navbar() {
   } = await supabase.auth.getUser();
 
   let username: string | null = null;
+  let avatarUrl: string | null = null;
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("username")
+      .select("username, avatar_url")
       .eq("id", user.id)
       .single();
     username = profile?.username ?? null;
+    avatarUrl = profile?.avatar_url ?? null;
   }
 
   return (
@@ -41,8 +43,16 @@ export default async function Navbar() {
             </Link>
             <Link
               href="/profile"
-              className="rounded-sm border border-asphalt-600 px-3 py-1.5 text-paper hover:border-flag-red"
+              className="flex items-center gap-2 rounded-sm border border-asphalt-600 px-3 py-1.5 text-paper hover:border-flag-red"
             >
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="h-5 w-5 rounded-full object-cover"
+                />
+              ) : null}
               {username ?? "Profile"}
             </Link>
           </nav>

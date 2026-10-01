@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import AvatarUpload from "@/components/AvatarUpload";
 
 type Profile = {
   id: string;
@@ -79,6 +80,12 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <AvatarUpload
+        userId={profile.id}
+        username={form.username || profile.username}
+        currentAvatarUrl={profile.avatar_url}
+      />
+
       <Field label="Username">
         <input
           value={form.username}
