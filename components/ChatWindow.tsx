@@ -51,6 +51,17 @@ export default function ChatWindow({
           ]);
         }
       )
+      .on(
+        "postgres_changes",
+        // Delete events can't be filtered by room, so we just drop the
+        // message by id if it's in this room's list.
+        { event: "DELETE", schema: "public", table: "chat_messages" },
+        (payload) => {
+          const deletedId = (payload.old as { id?: string })?.id;
+          if (!deletedId) return;
+          setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+        }
+      )
       .subscribe();
 
     return () => {
@@ -74,8 +85,26 @@ export default function ChatWindow({
     });
     if (insertError) {
       setDraft(text);
-      setError(insertError.message);
+      setError("Couldn't send your message. Please try again.");
     }
+  }
+
+  async function deleteMessage(id: string) {
+    const ok = window.confirm(
+      "Delete this message? It will be removed for everyone in the room."
+    );
+    if (!ok) return;
+    setError(null);
+    const { data, error: deleteError } = await supabase
+      .from("chat_messages")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (deleteError || !data || data.length === 0) {
+      setError("Couldn't delete that message. Please try again.");
+      return;
+    }
+    setMessages((prev) => prev.filter((m) => m.id !== id));
   }
 
   return (
@@ -86,7 +115,7 @@ export default function ChatWindow({
           return (
             <div
               key={m.id}
-              className={`flex ${mine ? "justify-end" : "justify-start"}`}
+              className={`flex flex-col ${mine ? "items-end" : "items-start"}`}
             >
               <div
                 className={`max-w-[75%] px-3 py-2 text-sm ${
@@ -100,6 +129,15 @@ export default function ChatWindow({
                 )}
                 <p>{m.content}</p>
               </div>
+              {mine && (
+                <button
+                  type="button"
+                  onClick={() => deleteMessage(m.id)}
+                  className="mt-0.5 text-[11px] text-paper/30 hover:text-flag-red"
+                >
+                  Delete
+                </button>
+              )}
             </div>
           );
         })}
@@ -108,19 +146,19 @@ export default function ChatWindow({
       <div className="border-t border-asphalt-700 p-3">
         {error && <p className="mb-2 text-sm text-flag-red">{error}</p>}
         <div className="flex items-center gap-2">
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          placeholder="Say something to the room…"
-          className="flex-1 rounded-sm border border-asphalt-600 bg-asphalt-950 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red"
-        />
-        <button
-          onClick={sendMessage}
-          className="rounded-sm bg-flag-red px-4 py-2 text-sm font-medium text-paper hover:bg-flag-red/90"
-        >
-          Send
-        </button>
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="Say something to the room…"
+            className="flex-1 rounded-sm border border-asphalt-600 bg-asphalt-950 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red"
+          />
+          <button
+            onClick={sendMessage}
+            className="rounded-sm bg-flag-red px-4 py-2 text-sm font-medium text-paper hover:bg-flag-red/90"
+          >
+            Send
+          </button>
         </div>
       </div>
     </div>
