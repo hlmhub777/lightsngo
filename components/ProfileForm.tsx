@@ -31,6 +31,14 @@ const TEAMS = [
   "Haas",
 ];
 
+// Same rule as sign-up: 18+ by birth year.
+const LATEST_ALLOWED_YEAR = new Date().getFullYear() - 18;
+const EARLIEST_YEAR = 1920;
+const BIRTH_YEARS = Array.from(
+  { length: LATEST_ALLOWED_YEAR - EARLIEST_YEAR + 1 },
+  (_, i) => LATEST_ALLOWED_YEAR - i
+);
+
 export default function ProfileForm({ profile }: { profile: Profile }) {
   const supabase = createClient();
   const router = useRouter();
@@ -39,7 +47,7 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
     username: profile.username ?? "",
     country: profile.country ?? "",
     gender: profile.gender ?? "",
-    birth_year: profile.birth_year ?? "",
+    birth_year: profile.birth_year ? String(profile.birth_year) : "",
     favorite_team: profile.favorite_team ?? "",
     favorite_driver: profile.favorite_driver ?? "",
     tracks_visited: (profile.tracks_visited ?? []).join(", "),
@@ -47,21 +55,38 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const missingBirthYear = !profile.birth_year;
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
     setSaved(false);
+    setError(null);
   }
 
   async function handleSave() {
+    setError(null);
+
+    const year = Number(form.birth_year);
+    if (!form.birth_year || year < EARLIEST_YEAR || year > LATEST_ALLOWED_YEAR) {
+      setError("Please choose your birth year. LightsNGo is for people aged 18 and over.");
+      return;
+    }
+
+    if (!form.username.trim()) {
+      setError("Please enter a username.");
+      return;
+    }
+
     setSaving(true);
-    const { error } = await supabase
+    const { error: saveError } = await supabase
       .from("profiles")
       .update({
-        username: form.username,
+        username: form.username.trim(),
         country: form.country || null,
         gender: form.gender || null,
-        birth_year: form.birth_year ? Number(form.birth_year) : null,
+        birth_year: year,
         favorite_team: form.favorite_team || null,
         favorite_driver: form.favorite_driver || null,
         tracks_visited: form.tracks_visited
@@ -72,14 +97,30 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
       .eq("id", profile.id);
 
     setSaving(false);
-    if (!error) {
-      setSaved(true);
-      router.refresh();
+    if (saveError) {
+      if (saveError.code === "23505") {
+        setError("That username is already taken. Please choose another one.");
+      } else if (saveError.message.toLowerCase().includes("birth year")) {
+        setError("Please choose a valid birth year. You need to be 18 or older.");
+      } else {
+        setError("Couldn't save your profile. Please try again.");
+      }
+      return;
     }
+
+    setSaved(true);
+    router.refresh();
   }
 
   return (
     <div className="flex flex-col gap-4">
+      {missingBirthYear && (
+        <p className="rounded-sm border border-flag-amber/40 bg-flag-amber/5 px-3 py-2 text-sm text-paper/80">
+          Please add your birth year below. It&rsquo;s required to confirm
+          you&rsquo;re 18 or older.
+        </p>
+      )}
+
       <AvatarUpload
         userId={profile.id}
         username={form.username || profile.username}
@@ -118,13 +159,24 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
       </div>
 
       <Field label="Birth year">
-        <input
-          type="number"
+        <select
+          required
           value={form.birth_year}
           onChange={(e) => update("birth_year", e.target.value)}
           className="input"
-          placeholder="1995"
-        />
+        >
+          <option value="" disabled>
+            Choose your birth year
+          </option>
+          {BIRTH_YEARS.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
+        <span className="mt-1 block text-xs text-paper/50">
+          Required to confirm you&rsquo;re 18+.
+        </span>
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
@@ -169,6 +221,8 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
           className="input resize-none"
         />
       </Field>
+
+      {error && <p className="text-sm text-flag-red">{error}</p>}
 
       <div className="mt-1 flex items-center gap-3">
         <button
