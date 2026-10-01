@@ -466,6 +466,29 @@ create trigger rate_limit_guide_entries_trigger
   for each row execute procedure public.rate_limit_guide_entries();
 
 -- ------------------------------------------------------------
+-- ACCOUNT DELETION
+-- Lets a logged-in user permanently delete their own account.
+-- Deleting the auth.users row cascades through "on delete cascade"
+-- to their profile and everything tied to it (posts, comments,
+-- likes, guide entries, chat messages, contacts, DMs). This
+-- function can only ever delete the CALLER's own row — there is
+-- no way to pass in someone else's id.
+-- ------------------------------------------------------------
+create or replace function public.delete_user_account()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+revoke all on function public.delete_user_account() from public;
+grant execute on function public.delete_user_account() to authenticated;
+
+-- ------------------------------------------------------------
 -- Realtime: broadcast changes for chat + DMs
 -- ------------------------------------------------------------
 alter publication supabase_realtime add table public.chat_messages;
