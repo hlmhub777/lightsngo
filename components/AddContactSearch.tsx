@@ -13,7 +13,6 @@ export default function AddContactSearch({ userId }: { userId: string }) {
   const [results, setResults] = useState<Result[]>([]);
   const [sentTo, setSentTo] = useState<string[]>([]);
   const [searching, setSearching] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleSearch() {
     if (!query.trim()) {
@@ -32,15 +31,12 @@ export default function AddContactSearch({ userId }: { userId: string }) {
   }
 
   async function sendRequest(recipientId: string) {
-    setError(null);
-    const { error: insertError } = await supabase
+    const { error } = await supabase
       .from("contacts")
       .insert({ requester_id: userId, recipient_id: recipientId });
-    if (!insertError) {
+    if (!error) {
       setSentTo((prev) => [...prev, recipientId]);
       router.refresh();
-    } else {
-      setError(insertError.message);
     }
   }
 
@@ -61,8 +57,6 @@ export default function AddContactSearch({ userId }: { userId: string }) {
           {searching ? "…" : "Search"}
         </button>
       </div>
-
-      {error && <p className="mt-2 text-sm text-flag-red">{error}</p>}
 
       {results.length > 0 && (
         <div className="mt-3 flex flex-col gap-2">

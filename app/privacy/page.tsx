@@ -112,12 +112,10 @@ export default function PrivacyPolicyPage() {
           </h2>
           <p>
             We keep your account and content for as long as your account is
-            active. You can permanently delete your own account at any time
-            from your Profile page — this immediately and permanently
-            deletes your profile, posts, comments, likes, guide entries, and
-            both sides of any private messages you&rsquo;ve exchanged. This
-            can&rsquo;t be undone. You can also request deletion by emailing
-            us at [YOUR CONTACT EMAIL].
+            active. If you delete your account, we delete your profile data;
+            some content (like messages you sent to others) may remain
+            visible to the other party as is standard for messaging
+            services, unless you request full deletion by contacting us.
           </p>
         </section>
 

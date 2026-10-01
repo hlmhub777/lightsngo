@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "@/components/ProfileForm";
-import DeleteAccountButton from "@/components/DeleteAccountButton";
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -46,8 +45,6 @@ export default async function ProfilePage() {
       <div className="mt-6">
         <ProfileForm profile={profile} />
       </div>
-
-      <DeleteAccountButton username={profile.username} />
     </div>
   );
 }
