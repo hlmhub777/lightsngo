@@ -25,6 +25,7 @@ export default function DMWindow({
   const supabase = createClient();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,12 +58,17 @@ export default function DMWindow({
   async function sendMessage() {
     const text = draft.trim();
     if (!text) return;
+    setError(null);
     setDraft("");
-    await supabase.from("direct_messages").insert({
+    const { error: insertError } = await supabase.from("direct_messages").insert({
       sender_id: currentUserId,
       recipient_id: otherUserId,
       content: text,
     });
+    if (insertError) {
+      setDraft(text);
+      setError(insertError.message);
+    }
   }
 
   return (
@@ -93,20 +99,23 @@ export default function DMWindow({
         })}
         <div ref={bottomRef} />
       </div>
-      <div className="flex items-center gap-2 border-t border-asphalt-700 p-3">
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          placeholder={`Message ${otherUsername}…`}
-          className="flex-1 rounded-sm border border-asphalt-600 bg-asphalt-950 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red"
-        />
-        <button
-          onClick={sendMessage}
-          className="rounded-sm bg-flag-red px-4 py-2 text-sm font-medium text-paper hover:bg-flag-red/90"
-        >
-          Send
-        </button>
+      <div className="border-t border-asphalt-700 p-3">
+        {error && <p className="mb-2 text-sm text-flag-red">{error}</p>}
+        <div className="flex items-center gap-2">
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder={`Message ${otherUsername}…`}
+            className="flex-1 rounded-sm border border-asphalt-600 bg-asphalt-950 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red"
+          />
+          <button
+            onClick={sendMessage}
+            className="rounded-sm bg-flag-red px-4 py-2 text-sm font-medium text-paper hover:bg-flag-red/90"
+          >
+            Send
+          </button>
+        </div>
       </div>
     </div>
   );

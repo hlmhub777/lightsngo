@@ -9,17 +9,21 @@ export default function PostComposer({ userId }: { userId: string }) {
   const router = useRouter();
   const [content, setContent] = useState("");
   const [posting, setPosting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handlePost() {
     if (!content.trim()) return;
     setPosting(true);
-    const { error } = await supabase
+    setError(null);
+    const { error: insertError } = await supabase
       .from("posts")
       .insert({ author_id: userId, content: content.trim() });
     setPosting(false);
-    if (!error) {
+    if (!insertError) {
       setContent("");
       router.refresh();
+    } else {
+      setError(insertError.message);
     }
   }
 
@@ -32,6 +36,7 @@ export default function PostComposer({ userId }: { userId: string }) {
         rows={3}
         className="w-full resize-none bg-transparent text-paper placeholder:text-paper/40 outline-none"
       />
+      {error && <p className="mt-2 text-sm text-flag-red">{error}</p>}
       <div className="mt-2 flex justify-end">
         <button
           onClick={handlePost}

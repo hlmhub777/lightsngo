@@ -262,6 +262,89 @@ create policy "Users can send a DM"
   with check (auth.uid() = sender_id);
 
 -- ------------------------------------------------------------
+-- CONTENT MODERATION
+-- A simple, admin-managed word blocklist. Add or remove words
+-- any time from Supabase Studio → Table Editor → banned_words
+-- (no code change or redeploy needed). RLS is enabled with NO
+-- policies, so the table is invisible to the app/anon users —
+-- only you, via the Supabase dashboard, can see or edit it.
+-- Matching is case-insensitive and catches the word anywhere
+-- inside the text (so it also catches it inside other words —
+-- keep entries specific enough to avoid false positives).
+-- ------------------------------------------------------------
+create table public.banned_words (
+  word text primary key,
+  created_at timestamptz not null default now()
+);
+
+alter table public.banned_words enable row level security;
+-- Intentionally no policies: nobody can read/write this table
+-- through the app's API. Manage it from Supabase Studio only.
+
+-- A couple of mild starter examples so you can see how it
+-- behaves — replace these with real entries for your community.
+insert into public.banned_words (word) values ('idiot'), ('stupid');
+
+create or replace function public.contains_banned_word(input text)
+returns boolean as $$
+declare
+  banned record;
+begin
+  if input is null then
+    return false;
+  end if;
+  for banned in select word from public.banned_words loop
+    if input ilike '%' || banned.word || '%' then
+      return true;
+    end if;
+  end loop;
+  return false;
+end;
+$$ language plpgsql security definer stable;
+
+create or replace function public.moderate_single_column()
+returns trigger as $$
+begin
+  if public.contains_banned_word(new.content) then
+    raise exception 'Your message contains language that is not allowed here.'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace function public.moderate_guide_entry()
+returns trigger as $$
+begin
+  if public.contains_banned_word(new.title) or public.contains_banned_word(new.content) then
+    raise exception 'Your message contains language that is not allowed here.'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger moderate_posts
+  before insert or update on public.posts
+  for each row execute procedure public.moderate_single_column();
+
+create trigger moderate_comments
+  before insert or update on public.post_comments
+  for each row execute procedure public.moderate_single_column();
+
+create trigger moderate_chat_messages
+  before insert or update on public.chat_messages
+  for each row execute procedure public.moderate_single_column();
+
+create trigger moderate_direct_messages
+  before insert or update on public.direct_messages
+  for each row execute procedure public.moderate_single_column();
+
+create trigger moderate_guide_entries
+  before insert or update on public.guide_entries
+  for each row execute procedure public.moderate_guide_entry();
+
+-- ------------------------------------------------------------
 -- Realtime: broadcast changes for chat + DMs
 -- ------------------------------------------------------------
 alter publication supabase_realtime add table public.chat_messages;

@@ -24,6 +24,7 @@ export default function CommentSection({
   const [loaded, setLoaded] = useState(false);
   const [draft, setDraft] = useState("");
   const [posting, setPosting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,16 +57,19 @@ export default function CommentSection({
     const text = draft.trim();
     if (!text) return;
     setPosting(true);
-    const { data, error } = await supabase
+    setError(null);
+    const { data, error: insertError } = await supabase
       .from("post_comments")
       .insert({ post_id: postId, author_id: userId, content: text })
       .select("id, content, created_at, author:profiles(username)")
       .single();
     setPosting(false);
-    if (!error && data) {
+    if (!insertError && data) {
       setComments((prev) => [...prev, data as any]);
       setCount((c) => c + 1);
       setDraft("");
+    } else if (insertError) {
+      setError(insertError.message);
     }
   }
 
@@ -107,6 +111,7 @@ export default function CommentSection({
             </p>
           )}
 
+          {error && <p className="text-sm text-flag-red">{error}</p>}
           <div className="flex gap-2">
             <input
               value={draft}

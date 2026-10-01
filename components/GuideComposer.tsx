@@ -26,11 +26,13 @@ export default function GuideComposer({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
     if (!title.trim() || !content.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from("guide_entries").insert({
+    setError(null);
+    const { error: insertError } = await supabase.from("guide_entries").insert({
       race_event_id: raceEventId,
       author_id: userId,
       category,
@@ -38,11 +40,13 @@ export default function GuideComposer({
       content: content.trim(),
     });
     setSaving(false);
-    if (!error) {
+    if (!insertError) {
       setTitle("");
       setContent("");
       setOpen(false);
       router.refresh();
+    } else {
+      setError(insertError.message);
     }
   }
 
@@ -87,6 +91,7 @@ export default function GuideComposer({
         placeholder="The actual tip — be specific."
         className="mt-2 w-full resize-none rounded-sm border border-asphalt-600 bg-asphalt-950 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red"
       />
+      {error && <p className="mt-2 text-sm text-flag-red">{error}</p>}
       <div className="mt-2 flex justify-end gap-2">
         <button
           onClick={() => setOpen(false)}

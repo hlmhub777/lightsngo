@@ -23,6 +23,7 @@ export default function ChatWindow({
   const supabase = createClient();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,12 +65,17 @@ export default function ChatWindow({
   async function sendMessage() {
     const text = draft.trim();
     if (!text) return;
+    setError(null);
     setDraft("");
-    await supabase.from("chat_messages").insert({
+    const { error: insertError } = await supabase.from("chat_messages").insert({
       race_event_id: raceEventId,
       author_id: currentUserId,
       content: text,
     });
+    if (insertError) {
+      setDraft(text);
+      setError(insertError.message);
+    }
   }
 
   return (
@@ -99,7 +105,9 @@ export default function ChatWindow({
         })}
         <div ref={bottomRef} />
       </div>
-      <div className="flex items-center gap-2 border-t border-asphalt-700 p-3">
+      <div className="border-t border-asphalt-700 p-3">
+        {error && <p className="mb-2 text-sm text-flag-red">{error}</p>}
+        <div className="flex items-center gap-2">
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -113,6 +121,7 @@ export default function ChatWindow({
         >
           Send
         </button>
+        </div>
       </div>
     </div>
   );
