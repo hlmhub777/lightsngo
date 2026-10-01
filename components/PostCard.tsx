@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import LikeButton from "@/components/LikeButton";
 import CommentSection from "@/components/CommentSection";
+import ReportButton from "@/components/ReportButton";
 
 type Post = {
   id: string;
@@ -27,6 +28,7 @@ export default function PostCard({
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [removed, setRemoved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const initials = (post.author?.username ?? "?").slice(0, 2).toUpperCase();
   const isMine = post.author_id === currentUserId;
@@ -41,6 +43,24 @@ export default function PostCard({
     } else {
       setDeleting(false);
     }
+  }
+
+  async function handleBlock() {
+    const name = post.author?.username ?? "this user";
+    const ok = window.confirm(
+      `Block ${name}? You won't see their posts, comments, tips or chat messages anymore, and they won't be able to message you. They won't be notified. You can unblock them later from your profile.`
+    );
+    if (!ok) return;
+    setError(null);
+    const { error: rpcError } = await supabase.rpc("block_user", {
+      other_id: post.author_id,
+    });
+    if (rpcError) {
+      setError("Couldn't block this user. Please try again.");
+      return;
+    }
+    setRemoved(true);
+    router.refresh();
   }
 
   if (removed) return null;
@@ -78,7 +98,7 @@ export default function PostCard({
             {post.race_event.city}
           </Link>
         )}
-        {isMine && (
+        {isMine ? (
           <button
             onClick={handleDelete}
             disabled={deleting}
@@ -89,12 +109,32 @@ export default function PostCard({
               <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" />
             </svg>
           </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <ReportButton
+              contentType="post"
+              contentId={post.id}
+              reportedUserId={post.author_id}
+              reportedUsername={post.author?.username}
+              snapshot={post.content}
+              className="text-xs text-paper/40 hover:text-flag-amber"
+            />
+            <button
+              type="button"
+              onClick={handleBlock}
+              className="text-xs text-paper/40 hover:text-flag-red"
+            >
+              Block
+            </button>
+          </div>
         )}
       </div>
 
       <p className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed text-paper/90">
         {post.content}
       </p>
+
+      {error && <p className="mt-2 text-sm text-flag-red">{error}</p>}
 
       <div className="mt-3 flex items-start gap-4 border-t border-asphalt-800 pt-2">
         <LikeButton postId={post.id} userId={currentUserId} />
