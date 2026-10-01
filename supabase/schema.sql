@@ -431,6 +431,40 @@ create trigger rate_limit_dms_trigger
   before insert on public.direct_messages
   for each row execute procedure public.rate_limit_dms();
 
+create or replace function public.rate_limit_contacts()
+returns trigger as $$
+begin
+  if (select count(*) from public.contacts
+      where requester_id = new.requester_id
+        and created_at > now() - interval '10 minutes') >= 20 then
+    raise exception 'You are sending too many contact requests — please slow down.'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace function public.rate_limit_guide_entries()
+returns trigger as $$
+begin
+  if (select count(*) from public.guide_entries
+      where author_id = new.author_id
+        and created_at > now() - interval '10 minutes') >= 10 then
+    raise exception 'You are posting too many tips too fast — please slow down.'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger rate_limit_contacts_trigger
+  before insert on public.contacts
+  for each row execute procedure public.rate_limit_contacts();
+
+create trigger rate_limit_guide_entries_trigger
+  before insert on public.guide_entries
+  for each row execute procedure public.rate_limit_guide_entries();
+
 -- ------------------------------------------------------------
 -- Realtime: broadcast changes for chat + DMs
 -- ------------------------------------------------------------
