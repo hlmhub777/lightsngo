@@ -34,14 +34,28 @@ export default async function DMThreadPage({
 
   if (!otherProfile) notFound();
 
-  const { data: rawMessages } = await supabase
+  // If this user deleted the conversation before, only show newer messages.
+  const { data: clearRow } = await supabase
+    .from("conversation_clears")
+    .select("cleared_at")
+    .eq("user_id", user.id)
+    .eq("other_user_id", params.contactId)
+    .maybeSingle();
+
+  let messagesQuery = supabase
     .from("direct_messages")
     .select(
       "id, content, created_at, sender_id, recipient_id, attachment_path, attachment_name, attachment_type, attachment_size"
     )
     .or(
       `and(sender_id.eq.${user.id},recipient_id.eq.${params.contactId}),and(sender_id.eq.${params.contactId},recipient_id.eq.${user.id})`
-    )
+    );
+
+  if (clearRow?.cleared_at) {
+    messagesQuery = messagesQuery.gt("created_at", clearRow.cleared_at);
+  }
+
+  const { data: rawMessages } = await messagesQuery
     .order("created_at", { ascending: true })
     .limit(200);
 
