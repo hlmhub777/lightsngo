@@ -1,7 +1,31 @@
 import Link from "next/link";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import GuideBrowser from "@/components/GuideBrowser";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const supabase = createClient();
+  const { data: race } = await supabase
+    .from("race_events")
+    .select("name, city, country, season_year")
+    .eq("slug", params.slug)
+    .single();
+
+  if (!race) return {};
+
+  const title = `${race.name} ${race.season_year} — Travel Guide & Fan Chat | LightsNGo`;
+  const description = `Where to stay, how to get around, and where to eat for the ${race.season_year} ${race.name} in ${race.city}, ${race.country} — tips from fans who've actually been, plus a live race-day chat room.`;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+  };
+}
 
 export default async function RaceHubPage({
   params,
@@ -12,7 +36,6 @@ export default async function RaceHubPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
 
   const { data: race } = await supabase
     .from("race_events")
@@ -48,12 +71,21 @@ export default async function RaceHubPage({
               })}`}
           </p>
         </div>
-        <Link
-          href={`/races/${race.slug}/chat`}
-          className="whitespace-nowrap rounded-sm bg-flag-red px-4 py-2 text-sm font-medium text-paper hover:bg-flag-red/90"
-        >
-          Open chat room
-        </Link>
+        {user ? (
+          <Link
+            href={`/races/${race.slug}/chat`}
+            className="whitespace-nowrap rounded-sm bg-flag-red px-4 py-2 text-sm font-medium text-paper hover:bg-flag-red/90"
+          >
+            Open chat room
+          </Link>
+        ) : (
+          <Link
+            href="/login"
+            className="whitespace-nowrap rounded-sm border border-asphalt-600 px-4 py-2 text-sm font-medium text-paper hover:border-flag-red"
+          >
+            Log in for chat
+          </Link>
+        )}
       </div>
 
       <p className="mt-6 rounded-sm border border-asphalt-700 bg-asphalt-900 p-3 text-xs text-paper/50">
@@ -63,7 +95,7 @@ export default async function RaceHubPage({
 
       <GuideBrowser
         raceEventId={race.id}
-        userId={user.id}
+        userId={user?.id ?? null}
         entries={(entries as any) ?? []}
       />
     </div>

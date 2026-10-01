@@ -25,7 +25,7 @@ export default function GuideBrowser({
   entries,
 }: {
   raceEventId: string;
-  userId: string;
+  userId: string | null;
   entries: Entry[];
 }) {
   const [query, setQuery] = useState("");

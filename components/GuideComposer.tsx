@@ -16,7 +16,7 @@ export default function GuideComposer({
   userId,
 }: {
   raceEventId: string;
-  userId: string;
+  userId: string | null;
 }) {
   const supabase = createClient();
   const router = useRouter();
@@ -48,6 +48,17 @@ export default function GuideComposer({
     } else {
       setError(insertError.message);
     }
+  }
+
+  if (!userId) {
+    return (
+      <a
+        href="/login"
+        className="rounded-sm border border-dashed border-asphalt-600 px-3 py-1.5 text-sm text-paper/50 hover:border-flag-amber hover:text-flag-amber"
+      >
+        Log in to add a tip
+      </a>
+    );
   }
 
   if (!open) {
