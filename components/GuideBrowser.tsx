@@ -2,15 +2,7 @@
 
 import { useMemo, useState } from "react";
 import GuideComposer from "@/components/GuideComposer";
-
-type Entry = {
-  id: string;
-  category: string;
-  title: string;
-  content: string;
-  created_at: string;
-  author: { username: string } | null;
-};
+import GuideEntryCard, { type Entry } from "@/components/GuideEntryCard";
 
 const CATEGORIES: { key: string; label: string }[] = [
   { key: "transport", label: "Getting around" },
@@ -87,21 +79,7 @@ export default function GuideBrowser({
             <div className="mt-3 flex flex-col gap-2">
               {group.items.length > 0 ? (
                 group.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-sm border border-asphalt-700 bg-asphalt-900 p-3"
-                  >
-                    <p className="text-sm font-medium text-paper">
-                      {item.title}
-                    </p>
-                    <p className="mt-1 text-sm text-paper/70">
-                      {item.content}
-                    </p>
-                    <p className="mt-2 font-mono text-[11px] text-paper/40">
-                      — {item.author?.username ?? "a fan"} ·{" "}
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
+                  <GuideEntryCard key={item.id} item={item} userId={userId} />
                 ))
               ) : (
                 <p className="text-sm text-paper/40">

@@ -47,7 +47,9 @@ export default async function RaceHubPage({
 
   const { data: entries } = await supabase
     .from("guide_entries")
-    .select("id, category, title, content, created_at, author:profiles(username)")
+    .select(
+      "id, category, title, content, created_at, author_id, author:profiles!author_id(username, avatar_url), replies:guide_replies!guide_entry_id(id, content, created_at, author_id, author:profiles!author_id(username, avatar_url))"
+    )
     .eq("race_event_id", race.id)
     .order("created_at", { ascending: false });
 
