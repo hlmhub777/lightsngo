@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import Captcha from "@/components/Captcha";
+
+const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
 
 export default function SignupPage() {
   const router = useRouter();
@@ -13,6 +16,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -27,6 +31,11 @@ export default function SignupPage() {
       return;
     }
 
+    if (CAPTCHA_ENABLED && !captchaToken) {
+      setError("Please complete the verification check below.");
+      return;
+    }
+
     setLoading(true);
 
     const { error: signUpError } = await supabase.auth.signUp({
@@ -38,6 +47,7 @@ export default function SignupPage() {
           age_confirmed_18: true,
           terms_accepted: true,
         },
+        captchaToken: captchaToken ?? undefined,
       },
     });
 
@@ -88,12 +98,12 @@ export default function SignupPage() {
           <label className="mb-1 block text-sm text-paper/70">Password</label>
           <input
             required
-            minLength={6}
+            minLength={8}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-sm border border-asphalt-600 bg-asphalt-900 px-3 py-2 text-paper outline-none focus:border-flag-red"
-            placeholder="At least 6 characters"
+            placeholder="At least 8 characters"
           />
         </div>
 
@@ -116,6 +126,11 @@ export default function SignupPage() {
             .
           </span>
         </label>
+
+        <Captcha
+          onVerify={(token) => setCaptchaToken(token)}
+          onExpire={() => setCaptchaToken(null)}
+        />
 
         {error && <p className="text-sm text-flag-red">{error}</p>}
 

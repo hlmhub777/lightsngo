@@ -236,7 +236,8 @@ create policy "Users can send contact requests"
 
 create policy "Recipient can accept a contact request"
   on public.contacts for update
-  using (auth.uid() = recipient_id);
+  using (auth.uid() = recipient_id)
+  with check (auth.uid() = recipient_id and status = 'accepted');
 
 -- ------------------------------------------------------------
 -- DIRECT MESSAGES
@@ -257,9 +258,19 @@ create policy "Users can view their own conversations"
   on public.direct_messages for select
   using (auth.uid() = sender_id or auth.uid() = recipient_id);
 
-create policy "Users can send a DM"
+create policy "Users can send a DM only to an accepted contact"
   on public.direct_messages for insert
-  with check (auth.uid() = sender_id);
+  with check (
+    auth.uid() = sender_id
+    and exists (
+      select 1 from public.contacts c
+      where c.status = 'accepted'
+        and (
+          (c.requester_id = sender_id and c.recipient_id = recipient_id)
+          or (c.requester_id = recipient_id and c.recipient_id = sender_id)
+        )
+    )
+  );
 
 -- ------------------------------------------------------------
 -- CONTENT MODERATION
@@ -343,6 +354,82 @@ create trigger moderate_direct_messages
 create trigger moderate_guide_entries
   before insert or update on public.guide_entries
   for each row execute procedure public.moderate_guide_entry();
+
+-- ------------------------------------------------------------
+-- RATE LIMITING
+-- Stops a single account from flooding the feed/chat/DMs. Limits
+-- are generous for normal use, tight enough to stop a script.
+-- Adjust the numbers below any time by editing and re-running
+-- just these function definitions (create or replace is safe to
+-- re-run).
+-- ------------------------------------------------------------
+create or replace function public.rate_limit_posts()
+returns trigger as $$
+begin
+  if (select count(*) from public.posts
+      where author_id = new.author_id
+        and created_at > now() - interval '10 minutes') >= 10 then
+    raise exception 'You are posting too fast — please slow down.'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace function public.rate_limit_comments()
+returns trigger as $$
+begin
+  if (select count(*) from public.post_comments
+      where author_id = new.author_id
+        and created_at > now() - interval '5 minutes') >= 20 then
+    raise exception 'You are commenting too fast — please slow down.'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace function public.rate_limit_chat()
+returns trigger as $$
+begin
+  if (select count(*) from public.chat_messages
+      where author_id = new.author_id
+        and created_at > now() - interval '1 minute') >= 30 then
+    raise exception 'You are sending messages too fast — please slow down.'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace function public.rate_limit_dms()
+returns trigger as $$
+begin
+  if (select count(*) from public.direct_messages
+      where sender_id = new.sender_id
+        and created_at > now() - interval '1 minute') >= 30 then
+    raise exception 'You are sending messages too fast — please slow down.'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger rate_limit_posts_trigger
+  before insert on public.posts
+  for each row execute procedure public.rate_limit_posts();
+
+create trigger rate_limit_comments_trigger
+  before insert on public.post_comments
+  for each row execute procedure public.rate_limit_comments();
+
+create trigger rate_limit_chat_trigger
+  before insert on public.chat_messages
+  for each row execute procedure public.rate_limit_chat();
+
+create trigger rate_limit_dms_trigger
+  before insert on public.direct_messages
+  for each row execute procedure public.rate_limit_dms();
 
 -- ------------------------------------------------------------
 -- Realtime: broadcast changes for chat + DMs

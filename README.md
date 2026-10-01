@@ -115,6 +115,30 @@ since the app collects country, gender, and message content.
   open to all ages; ask me when you're ready to add this.
 - Payments/monetization.
 
+## Security hardening — a few things to finish in the Supabase dashboard
+
+Some of this couldn't be done in code — it's toggles in your Supabase
+project:
+
+1. **Confirm email on signup.** Supabase → Authentication → Sign In / Up →
+   make sure "Confirm email" is turned on. Without it, anyone can create
+   an account with a fake, unverified email address.
+2. **Password minimum length.** Supabase → Authentication → Sign In / Up →
+   set minimum password length to 8 (matches the signup form, which
+   already requires 8).
+3. **CAPTCHA on signup and login** (optional but recommended once you
+   start promoting the app publicly):
+   - Create a free account at [hcaptcha.com](https://hcaptcha.com), add a
+     new site, and copy the **Site Key** and **Secret Key** it gives you.
+   - In Supabase → Authentication → Attack Protection → enable "Enable
+     Captcha protection", choose hCaptcha, and paste in the **Secret
+     Key**.
+   - In Vercel → your project → Settings → Environment Variables, add
+     `NEXT_PUBLIC_HCAPTCHA_SITE_KEY` with the **Site Key** value, then
+     redeploy.
+   - Until you set this up, signup and login work exactly as before —
+     the CAPTCHA step only appears once the site key is present.
+
 ## Making changes later
 
 Every screen is a separate file under `app/`. You don't need to know how to

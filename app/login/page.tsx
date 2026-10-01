@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import Captcha from "@/components/Captcha";
+
+const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,17 +14,25 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (CAPTCHA_ENABLED && !captchaToken) {
+      setError("Please complete the verification check below.");
+      return;
+    }
+
     setLoading(true);
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: { captchaToken: captchaToken ?? undefined },
     });
 
     setLoading(false);
@@ -60,6 +71,11 @@ export default function LoginPage() {
             className="w-full rounded-sm border border-asphalt-600 bg-asphalt-900 px-3 py-2 text-paper outline-none focus:border-flag-red"
           />
         </div>
+
+        <Captcha
+          onVerify={(token) => setCaptchaToken(token)}
+          onExpire={() => setCaptchaToken(null)}
+        />
 
         {error && <p className="text-sm text-flag-red">{error}</p>}
 
