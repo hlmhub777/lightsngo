@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import Captcha from "@/components/Captcha";
+import PasswordInput from "@/components/PasswordInput";
 
 const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
 
@@ -96,13 +97,10 @@ export default function SignupPage() {
         </div>
         <div>
           <label className="mb-1 block text-sm text-paper/70">Password</label>
-          <input
-            required
-            minLength={8}
-            type="password"
+          <PasswordInput
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-sm border border-asphalt-600 bg-asphalt-900 px-3 py-2 text-paper outline-none focus:border-flag-red"
+            onChange={setPassword}
+            minLength={8}
             placeholder="At least 8 characters"
           />
         </div>
