@@ -143,6 +143,14 @@ export default function PrivacyPolicyPage() {
               address and browser information when you complete a check.
             </li>
           </ul>
+          <p className="mt-2">
+            <strong>If LightsNGo changes owner.</strong> If LightsNGo is sold,
+            transferred to a new owner, or moved to a company set up to run
+            it, your data may be transferred as part of that change. The new
+            owner must keep protecting your data under this policy, and
+            we&rsquo;ll let you know before the transfer happens, so you can
+            delete your account if you prefer.
+          </p>
         </section>
 
         <section>
@@ -186,8 +194,9 @@ export default function PrivacyPolicyPage() {
               with your username and profile photo.
             </li>
             <li>
-              <strong>Feed posts, comments, and chat room messages</strong>{" "}
-              are visible to other members.
+              <strong>Feed posts, comments, likes, and chat room messages</strong>{" "}
+              are visible only to registered members, not to visitors without
+              an account.
             </li>
             <li>
               <strong>Your email address is never shown</strong> to other
