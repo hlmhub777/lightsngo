@@ -28,7 +28,7 @@ export default async function DMThreadPage({
 
   const { data: otherProfile } = await supabase
     .from("profiles")
-    .select("username")
+    .select("username, avatar_url")
     .eq("id", params.contactId)
     .single();
 
@@ -55,6 +55,7 @@ export default async function DMThreadPage({
           currentUserId={user.id}
           otherUserId={params.contactId}
           otherUsername={otherProfile.username}
+          otherAvatarUrl={otherProfile.avatar_url}
           initialMessages={rawMessages ?? []}
         />
       </div>

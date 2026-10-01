@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Avatar from "@/components/Avatar";
 
 type Message = {
   id: string;
@@ -34,11 +35,13 @@ export default function DMWindow({
   currentUserId,
   otherUserId,
   otherUsername,
+  otherAvatarUrl,
   initialMessages,
 }: {
   currentUserId: string;
   otherUserId: string;
   otherUsername: string;
+  otherAvatarUrl?: string | null;
   initialMessages: Message[];
 }) {
   const supabase = createClient();
@@ -166,8 +169,8 @@ export default function DMWindow({
   return (
     <div className="flex h-[70vh] flex-col rounded-sm border border-asphalt-700 bg-asphalt-900">
       <div className="border-b border-asphalt-700 px-4 py-2.5">
-        <span className="inline-flex items-center gap-2 text-sm text-paper">
-          <span className="h-2 w-2 rounded-full bg-signal-green" />
+        <span className="inline-flex items-center gap-3 text-sm text-paper">
+          <Avatar url={otherAvatarUrl} name={otherUsername} size={32} />
           {otherUsername}
         </span>
       </div>
