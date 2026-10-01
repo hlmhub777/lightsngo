@@ -9,6 +9,15 @@ import PasswordInput from "@/components/PasswordInput";
 
 const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
 
+// Youngest allowed birth year: someone born this year turns 18 at some point
+// this calendar year. The 18+ checkbox covers the rest of the confirmation.
+const LATEST_ALLOWED_YEAR = new Date().getFullYear() - 18;
+const EARLIEST_YEAR = 1920;
+const BIRTH_YEARS = Array.from(
+  { length: LATEST_ALLOWED_YEAR - EARLIEST_YEAR + 1 },
+  (_, i) => LATEST_ALLOWED_YEAR - i
+);
+
 export default function SignupPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -16,6 +25,7 @@ export default function SignupPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [birthYear, setBirthYear] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +35,12 @@ export default function SignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const year = Number(birthYear);
+    if (!birthYear || year < EARLIEST_YEAR || year > LATEST_ALLOWED_YEAR) {
+      setError("Please choose your birth year. You need to be 18 or older to join.");
+      return;
+    }
 
     if (!agreed) {
       setError(
@@ -46,6 +62,7 @@ export default function SignupPage() {
       options: {
         data: {
           username,
+          birth_year: year,
           age_confirmed_18: true,
           terms_accepted: true,
         },
@@ -106,6 +123,28 @@ export default function SignupPage() {
             minLength={8}
             placeholder="At least 8 characters"
           />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm text-paper/70">Birth year</label>
+          <select
+            required
+            value={birthYear}
+            onChange={(e) => setBirthYear(e.target.value)}
+            className="w-full rounded-sm border border-asphalt-600 bg-asphalt-900 px-3 py-2 text-paper outline-none focus:border-flag-red"
+          >
+            <option value="" disabled>
+              Choose your birth year
+            </option>
+            {BIRTH_YEARS.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-paper/50">
+            Used to confirm you&rsquo;re 18+. It appears on your profile for
+            other members.
+          </p>
         </div>
 
         <label className="flex items-start gap-2.5 text-sm text-paper/70">
