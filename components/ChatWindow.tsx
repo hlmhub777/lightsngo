@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import ReportButton from "@/components/ReportButton";
 
 type Message = {
   id: string;
@@ -155,13 +156,22 @@ export default function ChatWindow({
                   Delete
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => blockAuthor(m.author_id, m.author_username)}
-                  className="mt-0.5 text-[11px] text-paper/30 hover:text-flag-red"
-                >
-                  Block
-                </button>
+                <div className="mt-0.5 flex gap-3">
+                  <ReportButton
+                    contentType="chat_message"
+                    contentId={m.id}
+                    reportedUserId={m.author_id}
+                    reportedUsername={m.author_username}
+                    snapshot={m.content}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => blockAuthor(m.author_id, m.author_username)}
+                    className="text-[11px] text-paper/30 hover:text-flag-red"
+                  >
+                    Block
+                  </button>
+                </div>
               )}
             </div>
           );

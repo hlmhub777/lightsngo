@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/Avatar";
+import ReportButton from "@/components/ReportButton";
 
 type Author = { username: string; avatar_url?: string | null } | null;
 
@@ -184,14 +185,24 @@ export default function GuideEntryCard({
         )}
 
         {userId && !isMine && (
-          <button
-            type="button"
-            onClick={() => blockAuthor(item.author_id, item.author?.username)}
-            disabled={busy}
-            className="text-xs text-paper/40 hover:text-flag-red disabled:opacity-50"
-          >
-            Block
-          </button>
+          <>
+            <ReportButton
+              contentType="guide_entry"
+              contentId={item.id}
+              reportedUserId={item.author_id}
+              reportedUsername={item.author?.username}
+              snapshot={`${item.title}\n\n${item.content}`}
+              className="text-xs text-paper/40 hover:text-flag-amber"
+            />
+            <button
+              type="button"
+              onClick={() => blockAuthor(item.author_id, item.author?.username)}
+              disabled={busy}
+              className="text-xs text-paper/40 hover:text-flag-red disabled:opacity-50"
+            >
+              Block
+            </button>
+          </>
         )}
       </div>
 
@@ -222,13 +233,23 @@ export default function GuideEntryCard({
                   </button>
                 )}
                 {userId && userId !== r.author_id && (
-                  <button
-                    type="button"
-                    onClick={() => blockAuthor(r.author_id, r.author?.username)}
-                    className="text-[11px] text-paper/40 hover:text-flag-red"
-                  >
-                    Block
-                  </button>
+                  <>
+                    <ReportButton
+                      contentType="guide_reply"
+                      contentId={r.id}
+                      reportedUserId={r.author_id}
+                      reportedUsername={r.author?.username}
+                      snapshot={r.content}
+                      className="text-[11px] text-paper/40 hover:text-flag-amber"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => blockAuthor(r.author_id, r.author?.username)}
+                      className="text-[11px] text-paper/40 hover:text-flag-red"
+                    >
+                      Block
+                    </button>
+                  </>
                 )}
               </div>
             </div>

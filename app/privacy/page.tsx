@@ -77,6 +77,12 @@ export default function PrivacyPolicyPage() {
               including any files you attach to them.
             </li>
             <li>
+              <strong>Reports and blocks:</strong> if you report content or a
+              user, we store your report, the reason, any details you add,
+              and a copy of the reported content. If you block someone, we
+              store who you blocked.
+            </li>
+            <li>
               <strong>Age and consent records:</strong> a record showing you
               confirmed you are 18+ and accepted the Terms and this policy.
             </li>
@@ -108,8 +114,8 @@ export default function PrivacyPolicyPage() {
             </li>
             <li>
               <strong>Legitimate interest</strong> — keeping the platform
-              secure, blocking automated abuse, and moderating harmful
-              content.
+              secure, blocking automated abuse, handling reports, and
+              moderating harmful content.
             </li>
           </ul>
         </section>
@@ -199,6 +205,11 @@ export default function PrivacyPolicyPage() {
               an account.
             </li>
             <li>
+              <strong>If you report someone</strong>, they are never told
+              who reported them. <strong>If you block someone</strong>, they
+              are not notified.
+            </li>
+            <li>
               <strong>Your email address is never shown</strong> to other
               members.
             </li>
@@ -248,6 +259,12 @@ export default function PrivacyPolicyPage() {
             exchanged, including attached files. This can&rsquo;t be undone.
             You can also ask us to delete your account by emailing
             lightsngoo@gmail.com.
+          </p>
+          <p className="mt-2">
+            Reports are kept for as long as we need them to review them and
+            keep the community safe, even if the reported content or account
+            is later deleted. If you delete your account, reports you made
+            are no longer linked to you.
           </p>
         </section>
 

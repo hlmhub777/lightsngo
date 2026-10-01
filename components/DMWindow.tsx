@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/Avatar";
+import ReportButton from "@/components/ReportButton";
 
 type Message = {
   id: string;
@@ -269,6 +270,14 @@ export default function DMWindow({
             >
               Remove contact
             </button>
+            <ReportButton
+              contentType="user"
+              reportedUserId={otherUserId}
+              reportedUsername={otherUsername}
+              className="block w-full px-3 py-2 text-left text-sm text-flag-amber hover:bg-asphalt-800"
+            >
+              Report user
+            </ReportButton>
             <button
               type="button"
               onClick={blockUser}
