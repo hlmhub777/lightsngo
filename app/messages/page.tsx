@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AddContactSearch from "@/components/AddContactSearch";
 import AcceptContactButton from "@/components/AcceptContactButton";
+import Avatar from "@/components/Avatar";
 
 export default async function MessagesPage() {
   const supabase = createClient();
@@ -14,7 +15,7 @@ export default async function MessagesPage() {
   const { data: rows } = await supabase
     .from("contacts")
     .select(
-      "id, status, requester_id, recipient_id, requester:profiles!contacts_requester_id_fkey(id, username), recipient:profiles!contacts_recipient_id_fkey(id, username)"
+      "id, status, requester_id, recipient_id, requester:profiles!contacts_requester_id_fkey(id, username, avatar_url), recipient:profiles!contacts_recipient_id_fkey(id, username, avatar_url)"
     )
     .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`);
 
@@ -54,7 +55,12 @@ export default async function MessagesPage() {
                 key={r.id}
                 className="flex items-center justify-between rounded-sm border border-asphalt-700 bg-asphalt-900 px-3 py-2"
               >
-                <span className="text-sm text-paper">
+                <span className="inline-flex items-center gap-3 text-sm text-paper">
+                  <Avatar
+                    url={r.requester.avatar_url}
+                    name={r.requester.username}
+                    size={32}
+                  />
                   {r.requester.username}
                 </span>
                 <AcceptContactButton contactRowId={r.id} />
@@ -66,7 +72,7 @@ export default async function MessagesPage() {
 
       <div className="mt-6">
         <h2 className="font-mono text-xs uppercase tracking-widest text-paper/50">
-          Contacts — {accepted.length} online in your paddock
+          Contacts — {accepted.length} in your paddock
         </h2>
         <div className="mt-2 flex flex-col gap-1">
           {accepted.length > 0 ? (
@@ -76,7 +82,7 @@ export default async function MessagesPage() {
                 href={`/messages/${c.id}`}
                 className="flex items-center gap-3 rounded-sm px-3 py-2 hover:bg-asphalt-900"
               >
-                <span className="h-2 w-2 rounded-full bg-signal-green" />
+                <Avatar url={c.avatar_url} name={c.username} size={36} />
                 <span className="text-sm text-paper">{c.username}</span>
               </Link>
             ))
@@ -96,9 +102,19 @@ export default async function MessagesPage() {
           </h2>
           <div className="mt-2 flex flex-col gap-1">
             {outgoingRequests.map((r: any) => (
-              <p key={r.id} className="px-3 py-2 text-sm text-paper/40">
+              <div
+                key={r.id}
+                className="flex items-center gap-3 px-3 py-2 text-sm text-paper/40"
+              >
+                <span className="opacity-60">
+                  <Avatar
+                    url={r.recipient.avatar_url}
+                    name={r.recipient.username}
+                    size={28}
+                  />
+                </span>
                 {r.recipient.username} — waiting for them to accept
-              </p>
+              </div>
             ))}
           </div>
         </div>
