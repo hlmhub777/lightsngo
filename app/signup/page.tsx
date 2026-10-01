@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import Captcha from "@/components/Captcha";
+import Captcha, { type CaptchaHandle } from "@/components/Captcha";
 import PasswordInput from "@/components/PasswordInput";
 
 const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
@@ -20,6 +20,7 @@ export default function SignupPage() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const captchaRef = useRef<CaptchaHandle>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,6 +57,8 @@ export default function SignupPage() {
 
     if (signUpError) {
       setError(signUpError.message);
+      setCaptchaToken(null);
+      captchaRef.current?.reset();
       return;
     }
 
@@ -126,6 +129,7 @@ export default function SignupPage() {
         </label>
 
         <Captcha
+          ref={captchaRef}
           onVerify={(token) => setCaptchaToken(token)}
           onExpire={() => setCaptchaToken(null)}
         />

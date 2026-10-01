@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import Captcha from "@/components/Captcha";
+import Captcha, { type CaptchaHandle } from "@/components/Captcha";
 
 const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
 
@@ -15,6 +15,7 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const captchaRef = useRef<CaptchaHandle>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,6 +40,8 @@ export default function ForgotPasswordPage() {
 
     if (resetError) {
       setError(resetError.message);
+      setCaptchaToken(null);
+      captchaRef.current?.reset();
       return;
     }
 
@@ -88,6 +91,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <Captcha
+          ref={captchaRef}
           onVerify={(token) => setCaptchaToken(token)}
           onExpire={() => setCaptchaToken(null)}
         />
