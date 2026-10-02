@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import ReportButton from "@/components/ReportButton";
+import Avatar from "@/components/Avatar";
 
 type Message = {
   id: string;
@@ -10,6 +11,7 @@ type Message = {
   created_at: string;
   author_id: string;
   author_username?: string;
+  author_avatar_url?: string | null;
 };
 
 export default function ChatWindow({
@@ -26,52 +28,114 @@ export default function ChatWindow({
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<Message[]>(initialMessages);
+  messagesRef.current = messages;
+
+  // Adds messages we haven't shown yet (from live updates or the backup check).
+  async function addIncoming(rows: Message[]) {
+    const fresh = rows.filter((r) => r.author_id !== currentUserId);
+    if (fresh.length === 0) return;
+    setMessages((prev) => {
+      const known = new Set(prev.map((m) => m.id));
+      const toAdd = fresh.filter((r) => !known.has(r.id));
+      return toAdd.length ? [...prev, ...toAdd] : prev;
+    });
+  }
 
   useEffect(() => {
-    const channel = supabase
-      .channel(`room:${raceEventId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `race_event_id=eq.${raceEventId}`,
-        },
-        async (payload) => {
-          const row = payload.new as Message;
-          // Our own messages are already added right after sending.
-          if (row.author_id === currentUserId) return;
-          // Look up the author's username for display.
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("username")
-            .eq("id", row.author_id)
-            .single();
-          setMessages((prev) =>
-            prev.some((m) => m.id === row.id)
-              ? prev
-              : [...prev, { ...row, author_username: profile?.username }]
-          );
-        }
-      )
-      .on(
-        "postgres_changes",
-        // Delete events can't be filtered by room, so we just drop the
-        // message by id if it's in this room's list.
-        { event: "DELETE", schema: "public", table: "chat_messages" },
-        (payload) => {
-          const deletedId = (payload.old as { id?: string })?.id;
-          if (!deletedId) return;
-          setMessages((prev) => prev.filter((m) => m.id !== deletedId));
-        }
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+
+    (async () => {
+      // Make sure live updates run as the signed-in user, otherwise the
+      // database's "members only" rule hides every new message.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        supabase.realtime.setAuth(session.access_token);
+      }
+      if (cancelled) return;
+
+      channel = supabase
+        .channel(`room:${raceEventId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "chat_messages",
+            filter: `race_event_id=eq.${raceEventId}`,
+          },
+          async (payload) => {
+            const row = payload.new as Message;
+            if (row.author_id === currentUserId) return;
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("username, avatar_url")
+              .eq("id", row.author_id)
+              .single();
+            addIncoming([
+              {
+                ...row,
+                author_username: profile?.username,
+                author_avatar_url: profile?.avatar_url ?? null,
+              },
+            ]);
+          }
+        )
+        .on(
+          "postgres_changes",
+          // Delete events can't be filtered by room, so we just drop the
+          // message by id if it's in this room's list.
+          { event: "DELETE", schema: "public", table: "chat_messages" },
+          (payload) => {
+            const deletedId = (payload.old as { id?: string })?.id;
+            if (!deletedId) return;
+            setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+          }
+        )
+        .subscribe();
+    })();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [raceEventId, currentUserId, supabase]);
+
+  // Backup: every few seconds, fetch anything new in case a live update
+  // was missed (weak connection, phone waking up, etc.).
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (document.visibilityState !== "visible") return;
+      const last = messagesRef.current[messagesRef.current.length - 1];
+      let query = supabase
+        .from("chat_messages")
+        .select(
+          "id, content, created_at, author_id, author:profiles(username, avatar_url)"
+        )
+        .eq("race_event_id", raceEventId)
+        .order("created_at", { ascending: true })
+        .limit(50);
+      if (last) query = query.gt("created_at", last.created_at);
+      const { data } = await query;
+      if (!data || data.length === 0) return;
+      addIncoming(
+        data.map((m: any) => ({
+          id: m.id,
+          content: m.content,
+          created_at: m.created_at,
+          author_id: m.author_id,
+          author_username: m.author?.username,
+          author_avatar_url: m.author?.avatar_url ?? null,
+        }))
+      );
+    }, 5000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [raceEventId, supabase]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -151,10 +215,24 @@ export default function ChatWindow({
           return (
             <div
               key={m.id}
-              className={`flex flex-col ${mine ? "items-end" : "items-start"}`}
+              className={`flex gap-2 ${mine ? "justify-end" : "justify-start"}`}
             >
+              {!mine && (
+                <div className="pt-1">
+                  <Avatar
+                    url={m.author_avatar_url}
+                    name={m.author_username ?? "?"}
+                    size={28}
+                  />
+                </div>
+              )}
               <div
-                className={`max-w-[75%] px-3 py-2 text-sm ${
+                className={`flex max-w-[75%] flex-col ${
+                  mine ? "items-end" : "items-start"
+                }`}
+              >
+              <div
+                className={`px-3 py-2 text-sm ${
                   mine ? "bubble-mine" : "bubble-theirs"
                 }`}
               >
@@ -191,6 +269,7 @@ export default function ChatWindow({
                   </button>
                 </div>
               )}
+              </div>
             </div>
           );
         })}

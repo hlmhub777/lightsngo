@@ -64,25 +64,43 @@ export default function DMWindow({
   const conversationFolder = [currentUserId, otherUserId].sort().join("/");
 
   useEffect(() => {
-    const channel = supabase
-      .channel(`dm:${[currentUserId, otherUserId].sort().join("-")}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "direct_messages" },
-        (payload) => {
-          const row = payload.new as Message;
-          const involvesUs =
-            (row.sender_id === currentUserId && row.recipient_id === otherUserId) ||
-            (row.sender_id === otherUserId && row.recipient_id === currentUserId);
-          if (involvesUs) {
-            setMessages((prev) => [...prev, row]);
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+
+    (async () => {
+      // Live updates must run as the signed-in user so the database lets
+      // this conversation's new messages through.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        supabase.realtime.setAuth(session.access_token);
+      }
+      if (cancelled) return;
+
+      channel = supabase
+        .channel(`dm:${[currentUserId, otherUserId].sort().join("-")}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "direct_messages" },
+          (payload) => {
+            const row = payload.new as Message;
+            const involvesUs =
+              (row.sender_id === currentUserId && row.recipient_id === otherUserId) ||
+              (row.sender_id === otherUserId && row.recipient_id === currentUserId);
+            if (involvesUs) {
+              setMessages((prev) =>
+                prev.some((m) => m.id === row.id) ? prev : [...prev, row]
+              );
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    })();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
     };
   }, [currentUserId, otherUserId, supabase]);
 
