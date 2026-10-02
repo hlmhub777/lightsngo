@@ -4,29 +4,32 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-const CATEGORIES = [
-  { value: "transport", label: "Transport" },
-  { value: "hotel", label: "Hotel" },
-  { value: "food", label: "Food" },
-  { value: "nightlife", label: "Nightlife" },
-] as const;
-
 // Years someone could have visited: this year back 25 seasons.
 const THIS_YEAR = new Date().getFullYear();
 const VISIT_YEARS = Array.from({ length: 26 }, (_, i) => THIS_YEAR - i);
 
+const TITLE_EXAMPLES: Record<string, string> = {
+  transport: "e.g. 'Skip the taxi line, take the shuttle'",
+  hotel: "e.g. 'Quiet hotel, 10 min walk to the shuttle'",
+  food: "e.g. 'Best late-night food near the circuit'",
+  nightlife: "e.g. 'Rooftop bar where fans meet after qualifying'",
+};
+
 export default function GuideComposer({
   raceEventId,
   userId,
+  category,
+  categoryLabel,
+  onClose,
 }: {
   raceEventId: string;
-  userId: string | null;
+  userId: string;
+  category: string;
+  categoryLabel: string;
+  onClose: () => void;
 }) {
   const supabase = createClient();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [category, setCategory] =
-    useState<(typeof CATEGORIES)[number]["value"]>("transport");
   const [visitYear, setVisitYear] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -53,56 +56,19 @@ export default function GuideComposer({
       content: content.trim(),
     });
     setSaving(false);
-    if (!insertError) {
-      setTitle("");
-      setContent("");
-      setVisitYear("");
-      setOpen(false);
-      router.refresh();
-    } else {
+    if (insertError) {
       setError("Couldn't save your tip. Please try again.");
+      return;
     }
-  }
-
-  if (!userId) {
-    return (
-      <a
-        href="/login"
-        className="rounded-sm border border-dashed border-asphalt-600 px-3 py-1.5 text-sm text-paper/50 hover:border-flag-amber hover:text-flag-amber"
-      >
-        Log in to add a tip
-      </a>
-    );
-  }
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="rounded-sm border border-dashed border-asphalt-600 px-3 py-1.5 text-sm text-paper/70 hover:border-flag-amber hover:text-flag-amber"
-      >
-        + Add a tip
-      </button>
-    );
+    onClose();
+    router.refresh();
   }
 
   return (
-    <div className="rounded-sm border border-asphalt-700 bg-asphalt-900 p-4">
-      <div className="flex flex-wrap gap-2">
-        {CATEGORIES.map((c) => (
-          <button
-            key={c.value}
-            onClick={() => setCategory(c.value)}
-            className={`rounded-sm border px-2.5 py-1 text-xs font-mono uppercase tracking-wide ${
-              category === c.value
-                ? "border-flag-amber text-flag-amber"
-                : "border-asphalt-600 text-paper/60"
-            }`}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
+    <div className="mt-3 rounded-sm border border-asphalt-700 bg-asphalt-900 p-4">
+      <p className="font-mono text-xs uppercase tracking-wide text-flag-amber">
+        New tip · {categoryLabel}
+      </p>
 
       <label className="mt-3 block">
         <span className="mb-1 block text-xs text-paper/60">
@@ -130,7 +96,7 @@ export default function GuideComposer({
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Short title, e.g. 'Skip the taxi line, take the shuttle'"
+        placeholder={`Short title, ${TITLE_EXAMPLES[category] ?? "e.g. 'What worked for you'"}`}
         className="mt-3 w-full rounded-sm border border-asphalt-600 bg-asphalt-950 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red"
       />
       <textarea
@@ -143,15 +109,14 @@ export default function GuideComposer({
       {error && <p className="mt-2 text-sm text-flag-red">{error}</p>}
       <div className="mt-2 flex justify-end gap-2">
         <button
-          onClick={() => {
-            setOpen(false);
-            setError(null);
-          }}
+          type="button"
+          onClick={onClose}
           className="px-3 py-1.5 text-sm text-paper/60 hover:text-paper"
         >
           Cancel
         </button>
         <button
+          type="button"
           onClick={handleSubmit}
           disabled={saving}
           className="rounded-sm bg-flag-amber px-4 py-1.5 text-sm font-medium text-asphalt-950 hover:bg-flag-amber/90 disabled:opacity-50"

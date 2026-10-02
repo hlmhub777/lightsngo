@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import GuideComposer from "@/components/GuideComposer";
 import GuideEntryCard, { type Entry } from "@/components/GuideEntryCard";
 
@@ -25,6 +26,7 @@ export default function GuideBrowser({
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("recent_visit");
   const [year, setYear] = useState<number | "all">("all");
+  const [openSection, setOpenSection] = useState<string | null>(null);
 
   // Years that actually have tips, newest first.
   const years = useMemo(() => {
@@ -123,8 +125,32 @@ export default function GuideBrowser({
               <h2 className="font-display text-lg font-600 text-paper">
                 {group.label}
               </h2>
-              <GuideComposer raceEventId={raceEventId} userId={userId} />
+              {!userId ? (
+                <Link
+                  href="/login"
+                  className="rounded-sm border border-dashed border-asphalt-600 px-3 py-1.5 text-sm text-paper/50 hover:border-flag-amber hover:text-flag-amber"
+                >
+                  Log in to add a tip
+                </Link>
+              ) : openSection !== group.key ? (
+                <button
+                  type="button"
+                  onClick={() => setOpenSection(group.key)}
+                  className="rounded-sm border border-dashed border-asphalt-600 px-3 py-1.5 text-sm text-paper/70 hover:border-flag-amber hover:text-flag-amber"
+                >
+                  + Add a tip
+                </button>
+              ) : null}
             </div>
+            {userId && openSection === group.key && (
+              <GuideComposer
+                raceEventId={raceEventId}
+                userId={userId}
+                category={group.key}
+                categoryLabel={group.label}
+                onClose={() => setOpenSection(null)}
+              />
+            )}
             <div className="mt-3 flex flex-col gap-2">
               {group.items.length > 0 ? (
                 group.items.map((item) => (
