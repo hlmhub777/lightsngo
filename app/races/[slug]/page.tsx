@@ -45,12 +45,22 @@ export default async function RaceHubPage({
 
   if (!race) notFound();
 
+  // Tips are shared by every season of the same race, so fans who went in
+  // earlier years still help people going this year.
+  const { data: seasons } = await supabase
+    .from("race_events")
+    .select("id")
+    .eq("series_key", race.series_key ?? "__none__");
+
+  const seasonIds = (seasons ?? []).map((s: { id: string }) => s.id);
+  if (!seasonIds.includes(race.id)) seasonIds.push(race.id);
+
   const { data: entries } = await supabase
     .from("guide_entries")
     .select(
-      "id, category, title, content, created_at, author_id, author:profiles!author_id(username, avatar_url), replies:guide_replies!guide_entry_id(id, content, created_at, author_id, author:profiles!author_id(username, avatar_url))"
+      "id, category, title, content, created_at, visit_year, author_id, author:profiles!author_id(username, avatar_url), replies:guide_replies!guide_entry_id(id, content, created_at, author_id, author:profiles!author_id(username, avatar_url))"
     )
-    .eq("race_event_id", race.id)
+    .in("race_event_id", seasonIds)
     .order("created_at", { ascending: false });
 
   return (
@@ -91,8 +101,9 @@ export default async function RaceHubPage({
       </div>
 
       <p className="mt-6 rounded-sm border border-asphalt-700 bg-asphalt-900 p-3 text-xs text-paper/50">
-        Prices near race weekend spike hard — these tips are for {race.season_year}
-        specifically, from people actually going. Book early.
+        Tips from fans who&rsquo;ve actually been here. Check the year on each
+        tip — prices and transport change every season, and they spike hard
+        near race weekend. Book early.
       </p>
 
       <GuideBrowser

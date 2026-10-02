@@ -11,6 +11,10 @@ const CATEGORIES = [
   { value: "nightlife", label: "Nightlife" },
 ] as const;
 
+// Years someone could have visited: this year back 25 seasons.
+const THIS_YEAR = new Date().getFullYear();
+const VISIT_YEARS = Array.from({ length: 26 }, (_, i) => THIS_YEAR - i);
+
 export default function GuideComposer({
   raceEventId,
   userId,
@@ -23,19 +27,28 @@ export default function GuideComposer({
   const [open, setOpen] = useState(false);
   const [category, setCategory] =
     useState<(typeof CATEGORIES)[number]["value"]>("transport");
+  const [visitYear, setVisitYear] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
-    if (!title.trim() || !content.trim()) return;
+    if (!visitYear) {
+      setError("Please choose the year you went.");
+      return;
+    }
+    if (!title.trim() || !content.trim()) {
+      setError("Please add a title and your tip.");
+      return;
+    }
     setSaving(true);
     setError(null);
     const { error: insertError } = await supabase.from("guide_entries").insert({
       race_event_id: raceEventId,
       author_id: userId,
       category,
+      visit_year: Number(visitYear),
       title: title.trim(),
       content: content.trim(),
     });
@@ -43,10 +56,11 @@ export default function GuideComposer({
     if (!insertError) {
       setTitle("");
       setContent("");
+      setVisitYear("");
       setOpen(false);
       router.refresh();
     } else {
-      setError(insertError.message);
+      setError("Couldn't save your tip. Please try again.");
     }
   }
 
@@ -89,6 +103,30 @@ export default function GuideComposer({
           </button>
         ))}
       </div>
+
+      <label className="mt-3 block">
+        <span className="mb-1 block text-xs text-paper/60">
+          When did you go?
+        </span>
+        <select
+          value={visitYear}
+          onChange={(e) => {
+            setVisitYear(e.target.value);
+            setError(null);
+          }}
+          className="w-full rounded-sm border border-asphalt-600 bg-asphalt-950 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red"
+        >
+          <option value="" disabled>
+            Choose the year of your visit
+          </option>
+          {VISIT_YEARS.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -99,13 +137,16 @@ export default function GuideComposer({
         value={content}
         onChange={(e) => setContent(e.target.value)}
         rows={3}
-        placeholder="The actual tip — be specific."
+        placeholder="The actual tip — be specific. Prices help, but say they're from your visit."
         className="mt-2 w-full resize-none rounded-sm border border-asphalt-600 bg-asphalt-950 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red"
       />
       {error && <p className="mt-2 text-sm text-flag-red">{error}</p>}
       <div className="mt-2 flex justify-end gap-2">
         <button
-          onClick={() => setOpen(false)}
+          onClick={() => {
+            setOpen(false);
+            setError(null);
+          }}
           className="px-3 py-1.5 text-sm text-paper/60 hover:text-paper"
         >
           Cancel

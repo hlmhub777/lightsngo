@@ -25,6 +25,7 @@ export type Entry = {
   created_at: string;
   author_id: string;
   author: Author;
+  visit_year?: number | null;
   replies?: Reply[];
 };
 
@@ -142,7 +143,14 @@ export default function GuideEntryCard({
 
   return (
     <div className="rounded-sm border border-asphalt-700 bg-asphalt-900 p-3">
-      <p className="text-sm font-medium text-paper">{item.title}</p>
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-medium text-paper">{item.title}</p>
+        {item.visit_year && (
+          <span className="shrink-0 rounded-sm border border-asphalt-600 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-flag-amber">
+            Visited {item.visit_year}
+          </span>
+        )}
+      </div>
       <p className="mt-1 whitespace-pre-line text-sm text-paper/70">
         {item.content}
       </p>

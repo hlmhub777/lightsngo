@@ -11,6 +11,8 @@ const CATEGORIES: { key: string; label: string }[] = [
   { key: "nightlife", label: "Nightlife" },
 ];
 
+type SortKey = "recent_visit" | "newest" | "oldest";
+
 export default function GuideBrowser({
   raceEventId,
   userId,
@@ -21,11 +23,22 @@ export default function GuideBrowser({
   entries: Entry[];
 }) {
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<"newest" | "oldest">("newest");
+  const [sort, setSort] = useState<SortKey>("recent_visit");
+  const [year, setYear] = useState<number | "all">("all");
+
+  // Years that actually have tips, newest first.
+  const years = useMemo(() => {
+    const set = new Set<number>();
+    entries.forEach((e) => {
+      if (e.visit_year) set.add(e.visit_year);
+    });
+    return Array.from(set).sort((a, b) => b - a);
+  }, [entries]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let result = entries.filter((e) => {
+      if (year !== "all" && e.visit_year !== year) return false;
       if (!q) return true;
       return (
         e.title.toLowerCase().includes(q) ||
@@ -34,19 +47,23 @@ export default function GuideBrowser({
       );
     });
     result = [...result].sort((a, b) => {
-      const diff =
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      return sort === "newest" ? -diff : diff;
+      const byDate =
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sort === "oldest") return -byDate;
+      if (sort === "newest") return byDate;
+      // Most recent visit first, then newest posted.
+      const byYear = (b.visit_year ?? 0) - (a.visit_year ?? 0);
+      return byYear !== 0 ? byYear : byDate;
     });
     return result;
-  }, [entries, query, sort]);
+  }, [entries, query, sort, year]);
 
   const grouped = CATEGORIES.map((cat) => ({
     ...cat,
     items: filtered.filter((e) => e.category === cat.key),
   }));
 
-  const searching = query.trim().length > 0;
+  const filtering = query.trim().length > 0 || year !== "all";
 
   return (
     <div>
@@ -59,13 +76,36 @@ export default function GuideBrowser({
         />
         <select
           value={sort}
-          onChange={(e) => setSort(e.target.value as "newest" | "oldest")}
-          className="rounded-sm border border-asphalt-600 bg-asphalt-900 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red sm:w-40"
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          className="rounded-sm border border-asphalt-600 bg-asphalt-900 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red sm:w-48"
         >
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
+          <option value="recent_visit">Most recent visit</option>
+          <option value="newest">Newest tips</option>
+          <option value="oldest">Oldest tips</option>
         </select>
       </div>
+
+      {years.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(["all", ...years] as const).map((y) => {
+            const active = year === y;
+            return (
+              <button
+                key={String(y)}
+                type="button"
+                onClick={() => setYear(y)}
+                className={`rounded-sm border px-2.5 py-1 font-mono text-xs ${
+                  active
+                    ? "border-flag-amber text-flag-amber"
+                    : "border-asphalt-600 text-paper/60 hover:text-paper"
+                }`}
+              >
+                {y === "all" ? "All years" : y}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="mt-6 flex flex-col gap-8">
         {grouped.map((group) => (
@@ -83,7 +123,7 @@ export default function GuideBrowser({
                 ))
               ) : (
                 <p className="text-sm text-paper/40">
-                  {searching ? "No tips match that search." : "No tips yet."}
+                  {filtering ? "No tips match that filter." : "No tips yet."}
                 </p>
               )}
             </div>
