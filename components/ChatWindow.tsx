@@ -40,16 +40,19 @@ export default function ChatWindow({
         },
         async (payload) => {
           const row = payload.new as Message;
+          // Our own messages are already added right after sending.
+          if (row.author_id === currentUserId) return;
           // Look up the author's username for display.
           const { data: profile } = await supabase
             .from("profiles")
             .select("username")
             .eq("id", row.author_id)
             .single();
-          setMessages((prev) => [
-            ...prev,
-            { ...row, author_username: profile?.username },
-          ]);
+          setMessages((prev) =>
+            prev.some((m) => m.id === row.id)
+              ? prev
+              : [...prev, { ...row, author_username: profile?.username }]
+          );
         }
       )
       .on(
@@ -68,7 +71,7 @@ export default function ChatWindow({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [raceEventId, supabase]);
+  }, [raceEventId, currentUserId, supabase]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -79,15 +82,30 @@ export default function ChatWindow({
     if (!text) return;
     setError(null);
     setDraft("");
-    const { error: insertError } = await supabase.from("chat_messages").insert({
-      race_event_id: raceEventId,
-      author_id: currentUserId,
-      content: text,
-    });
-    if (insertError) {
+    const { data: inserted, error: insertError } = await supabase
+      .from("chat_messages")
+      .insert({
+        race_event_id: raceEventId,
+        author_id: currentUserId,
+        content: text,
+      })
+      .select("id, content, created_at, author_id")
+      .single();
+    if (insertError || !inserted) {
       setDraft(text);
-      setError("Couldn't send your message. Please try again.");
+      setError(
+        insertError
+          ? `Couldn't send your message (${insertError.message}).`
+          : "Couldn't send your message. Please try again."
+      );
+      return;
     }
+    // Show our own message right away, without waiting for live updates.
+    setMessages((prev) =>
+      prev.some((m) => m.id === inserted.id)
+        ? prev
+        : [...prev, inserted as Message]
+    );
   }
 
   async function deleteMessage(id: string) {
