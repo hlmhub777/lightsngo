@@ -58,10 +58,33 @@ export default async function RaceHubPage({
   const { data: entries } = await supabase
     .from("guide_entries")
     .select(
-      "id, category, title, content, created_at, visit_year, author_id, author:profiles!author_id(username, avatar_url), replies:guide_replies!guide_entry_id(id, content, created_at, author_id, author:profiles!author_id(username, avatar_url))"
+      "id, category, title, content, created_at, visit_year, rating_sum, rating_count, author_id, author:profiles!author_id(username, avatar_url), replies:guide_replies!guide_entry_id(id, content, created_at, author_id, author:profiles!author_id(username, avatar_url))"
     )
     .in("race_event_id", seasonIds)
     .order("created_at", { ascending: false });
+
+  // Add the signed-in user's own star rating to each tip.
+  let entriesWithMine: any[] = (entries as any[]) ?? [];
+  if (user && entriesWithMine.length > 0) {
+    const { data: mine } = await supabase
+      .from("guide_ratings")
+      .select("guide_entry_id, stars")
+      .eq("user_id", user.id)
+      .in(
+        "guide_entry_id",
+        entriesWithMine.map((e) => e.id)
+      );
+    const myStars = new Map(
+      (mine ?? []).map((r: { guide_entry_id: string; stars: number }) => [
+        r.guide_entry_id,
+        r.stars,
+      ])
+    );
+    entriesWithMine = entriesWithMine.map((e) => ({
+      ...e,
+      my_rating: myStars.get(e.id) ?? null,
+    }));
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -109,7 +132,7 @@ export default async function RaceHubPage({
       <GuideBrowser
         raceEventId={race.id}
         userId={user?.id ?? null}
-        entries={(entries as any) ?? []}
+        entries={entriesWithMine}
       />
     </div>
   );

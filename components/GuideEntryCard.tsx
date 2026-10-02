@@ -26,6 +26,9 @@ export type Entry = {
   author_id: string;
   author: Author;
   visit_year?: number | null;
+  rating_sum?: number;
+  rating_count?: number;
+  my_rating?: number | null;
   replies?: Reply[];
 };
 
@@ -55,6 +58,57 @@ export default function GuideEntryCard({
   const [error, setError] = useState<string | null>(null);
 
   const isMine = !!userId && userId === item.author_id;
+
+  const [ratingSum, setRatingSum] = useState(item.rating_sum ?? 0);
+  const [ratingCount, setRatingCount] = useState(item.rating_count ?? 0);
+  const [myRating, setMyRating] = useState<number | null>(item.my_rating ?? null);
+  const [hoverStars, setHoverStars] = useState<number | null>(null);
+  const [rating, setRating] = useState(false);
+  const canRate = !!userId && !isMine;
+  const average = ratingCount > 0 ? ratingSum / ratingCount : 0;
+
+  async function rate(stars: number) {
+    if (!userId || rating) return;
+    setRating(true);
+    setError(null);
+
+    // Clicking your current rating again removes it.
+    if (myRating === stars) {
+      const { error: delError } = await supabase
+        .from("guide_ratings")
+        .delete()
+        .eq("guide_entry_id", item.id)
+        .eq("user_id", userId);
+      setRating(false);
+      if (delError) {
+        setError("Couldn't remove your rating. Please try again.");
+        return;
+      }
+      setRatingSum((v) => v - stars);
+      setRatingCount((v) => Math.max(0, v - 1));
+      setMyRating(null);
+      return;
+    }
+
+    const { error: upsertError } = await supabase
+      .from("guide_ratings")
+      .upsert(
+        { guide_entry_id: item.id, user_id: userId, stars },
+        { onConflict: "guide_entry_id,user_id" }
+      );
+    setRating(false);
+    if (upsertError) {
+      setError("Couldn't save your rating. Please try again.");
+      return;
+    }
+    if (myRating) {
+      setRatingSum((v) => v + stars - myRating);
+    } else {
+      setRatingSum((v) => v + stars);
+      setRatingCount((v) => v + 1);
+    }
+    setMyRating(stars);
+  }
 
   async function deleteTip() {
     const ok = window.confirm(
@@ -154,6 +208,60 @@ export default function GuideEntryCard({
       <p className="mt-1 whitespace-pre-line text-sm text-paper/70">
         {item.content}
       </p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div
+          className="flex"
+          onMouseLeave={() => setHoverStars(null)}
+          aria-label={
+            canRate
+              ? "Rate this tip"
+              : `Rated ${average.toFixed(1)} out of 5`
+          }
+        >
+          {[1, 2, 3, 4, 5].map((n) => {
+            const shown = hoverStars ?? myRating ?? Math.round(average);
+            const filled = n <= shown;
+            const colour =
+              hoverStars !== null || myRating
+                ? filled
+                  ? "text-flag-amber"
+                  : "text-paper/20"
+                : filled
+                ? "text-flag-amber/70"
+                : "text-paper/20";
+            return canRate ? (
+              <button
+                key={n}
+                type="button"
+                onClick={() => rate(n)}
+                onMouseEnter={() => setHoverStars(n)}
+                disabled={rating}
+                title={
+                  myRating === n
+                    ? "Click again to remove your rating"
+                    : `Rate ${n} star${n > 1 ? "s" : ""}`
+                }
+                className={`px-0.5 text-base leading-none ${colour} disabled:opacity-60`}
+              >
+                ★
+              </button>
+            ) : (
+              <span key={n} className={`px-0.5 text-base leading-none ${colour}`}>
+                ★
+              </span>
+            );
+          })}
+        </div>
+        <span className="font-mono text-[11px] text-paper/40">
+          {ratingCount > 0
+            ? `${average.toFixed(1)} · ${ratingCount} rating${ratingCount > 1 ? "s" : ""}`
+            : canRate
+            ? "Be the first to rate this tip"
+            : "No ratings yet"}
+          {myRating ? ` · you gave ${myRating}` : ""}
+        </span>
+      </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-paper/40">

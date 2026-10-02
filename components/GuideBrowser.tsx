@@ -11,7 +11,7 @@ const CATEGORIES: { key: string; label: string }[] = [
   { key: "nightlife", label: "Nightlife" },
 ];
 
-type SortKey = "recent_visit" | "newest" | "oldest";
+type SortKey = "recent_visit" | "top_rated" | "newest" | "oldest";
 
 export default function GuideBrowser({
   raceEventId,
@@ -49,6 +49,14 @@ export default function GuideBrowser({
     result = [...result].sort((a, b) => {
       const byDate =
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sort === "top_rated") {
+        const avg = (e: Entry) =>
+          e.rating_count ? (e.rating_sum ?? 0) / e.rating_count : 0;
+        const byAvg = avg(b) - avg(a);
+        if (byAvg !== 0) return byAvg;
+        const byCount = (b.rating_count ?? 0) - (a.rating_count ?? 0);
+        return byCount !== 0 ? byCount : byDate;
+      }
       if (sort === "oldest") return -byDate;
       if (sort === "newest") return byDate;
       // Most recent visit first, then newest posted.
@@ -80,6 +88,7 @@ export default function GuideBrowser({
           className="rounded-sm border border-asphalt-600 bg-asphalt-900 px-3 py-2 text-sm text-paper outline-none focus:border-flag-red sm:w-48"
         >
           <option value="recent_visit">Most recent visit</option>
+          <option value="top_rated">Top rated</option>
           <option value="newest">Newest tips</option>
           <option value="oldest">Oldest tips</option>
         </select>
