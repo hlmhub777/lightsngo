@@ -141,7 +141,7 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
             value={form.country}
             onChange={(e) => update("country", e.target.value)}
             className="input"
-            placeholder="Romania"
+            placeholder="Your country"
           />
         </Field>
         <Field label="Gender">
@@ -199,17 +199,17 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
             value={form.favorite_driver}
             onChange={(e) => update("favorite_driver", e.target.value)}
             className="input"
-            placeholder="e.g. Charles Leclerc"
+            placeholder="Your favorite driver"
           />
         </Field>
       </div>
 
-      <Field label="Tracks you've been to (comma-separated)">
+      <Field label="Tracks you've been to">
         <input
           value={form.tracks_visited}
           onChange={(e) => update("tracks_visited", e.target.value)}
           className="input"
-          placeholder="Monza, Spa, Monaco"
+          placeholder="Tracks you've visited, separated by commas"
         />
       </Field>
 
@@ -219,6 +219,7 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
           onChange={(e) => update("bio", e.target.value)}
           rows={3}
           className="input resize-none"
+          placeholder="A few words about you as a fan"
         />
       </Field>
 
