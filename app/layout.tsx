@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Rajdhani, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
@@ -27,6 +27,18 @@ export const metadata: Metadata = {
   title: "LightsNGo — find your people, race weekend after race weekend",
   description:
     "A community for F1 fans: race-day chat rooms, city guides written by people who've actually been, and a contact list for the fans you meet along the way.",
+  applicationName: "LightsNGo",
+  appleWebApp: {
+    capable: true,
+    title: "LightsNGo",
+    statusBarStyle: "black",
+  },
+};
+
+// Colours the phone's status bar and the app's top bar to match the site.
+export const viewport: Viewport = {
+  themeColor: "#0B0E11",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
