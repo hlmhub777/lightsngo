@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.lightsngo.app",
+      "sha256_cert_fingerprints": [
+        "B8:E9:74:57:7E:78:FC:BB:09:A5:57:C2:D0:51:CC:63:E2:CC:13:1F:75:F9:FE:D7:7B:0E:79:B5:3E:01:B1:75"
+      ]
+    }
+  }
+]
