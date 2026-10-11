@@ -49,7 +49,7 @@ export default function PrivacyPolicyPage() {
             Cosmin Dima, a private individual based in Romania, who is
             responsible for your personal data (the &ldquo;data
             controller&rdquo;). For any question about this policy or your
-            data, contact us at lightsngoo@gmail.com.
+            data, contact us at contact.lightsngo@gmail.com.
           </p>
         </section>
 
@@ -258,7 +258,7 @@ export default function PrivacyPolicyPage() {
             contacts, and both sides of any private messages you&rsquo;ve
             exchanged, including attached files. This can&rsquo;t be undone.
             You can also ask us to delete your account by emailing
-            lightsngoo@gmail.com.
+            contact.lightsngo@gmail.com.
           </p>
           <p className="mt-2">
             Reports are kept for as long as we need them to review them and
@@ -286,7 +286,7 @@ export default function PrivacyPolicyPage() {
             </li>
           </ul>
           <p className="mt-2">
-            To exercise any of these rights, email us at lightsngoo@gmail.com.
+            To exercise any of these rights, email us at contact.lightsngo@gmail.com.
             We&rsquo;ll respond within 30 days.
           </p>
         </section>

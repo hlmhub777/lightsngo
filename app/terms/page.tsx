@@ -30,7 +30,7 @@ export default function TermsPage() {
               Privacy Policy
             </Link>
             . If you don&rsquo;t agree, please don&rsquo;t use the service.
-            You can contact us at lightsngoo@gmail.com.
+            You can contact us at contact.lightsngo@gmail.com.
           </p>
         </section>
 
@@ -52,7 +52,7 @@ export default function TermsPage() {
           <p>
             You&rsquo;re responsible for keeping your password secure and for
             all activity on your account. Tell us right away at
-            lightsngoo@gmail.com if you think someone else has accessed your
+            contact.lightsngo@gmail.com if you think someone else has accessed your
             account. One person, one account.
           </p>
         </section>
@@ -135,7 +135,7 @@ export default function TermsPage() {
             </li>
             <li>
               You can also report illegal content by email to
-              lightsngoo@gmail.com. If you think we removed your content or
+              contact.lightsngo@gmail.com. If you think we removed your content or
               suspended your account by mistake, email us and we&rsquo;ll take
               another look.
             </li>

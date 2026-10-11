@@ -50,10 +50,10 @@ export default function DeleteAccountInfoPage() {
           <p>
             Email us at{" "}
             <a
-              href="mailto:lightsngoo@gmail.com?subject=Delete%20my%20LightsNGo%20account"
+              href="mailto:contact.lightsngo@gmail.com?subject=Delete%20my%20LightsNGo%20account"
               className="text-flag-amber hover:underline"
             >
-              lightsngoo@gmail.com
+              contact.lightsngo@gmail.com
             </a>{" "}
             from the email address you signed up with, and include your
             username. We&rsquo;ll delete your account within 30 days and
