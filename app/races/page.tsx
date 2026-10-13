@@ -2,9 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import RacesList from "@/components/RacesList";
 
 export const metadata = {
-  title: "2027 F1 Race Calendar — LightsNGo",
+  title: "F1 Race Calendar — LightsNGo",
   description:
-    "Every 2027 Formula 1 race weekend, with fan-written city guides covering transport, hotels, food, and nightlife for each Grand Prix — plus a live race-day chat room.",
+    "Every Formula 1 race weekend, with fan-written city guides covering transport, hotels, food, and nightlife for each Grand Prix — plus a live race-day chat room.",
 };
 
 export default async function RacesPage() {
