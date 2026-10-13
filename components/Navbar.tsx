@@ -24,14 +24,16 @@ export default async function Navbar() {
     <header className="sticky top-0 z-20 border-b border-asphalt-700 bg-asphalt-950/95 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <Link href="/feed" className="flex items-center gap-2.5">
-          <StartLights size="sm" />
+          <span className="hidden sm:inline-flex">
+            <StartLights size="sm" />
+          </span>
           <span className="font-display text-xl font-700 tracking-wide text-paper">
             Lights<span className="text-flag-red">N</span>Go
           </span>
         </Link>
 
         {user ? (
-          <nav className="flex items-center gap-5 text-sm">
+          <nav className="flex items-center gap-3 text-sm sm:gap-5">
             <Link href="/feed" className="text-paper/80 hover:text-paper">
               Feed
             </Link>
@@ -43,7 +45,7 @@ export default async function Navbar() {
             </Link>
             <Link
               href="/profile"
-              className="flex items-center gap-2 rounded-sm border border-asphalt-600 px-3 py-1.5 text-paper hover:border-flag-red"
+              className="flex items-center gap-2 rounded-sm border border-asphalt-600 px-2 py-1.5 text-paper hover:border-flag-red sm:px-3"
             >
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -53,7 +55,9 @@ export default async function Navbar() {
                   className="h-5 w-5 rounded-full object-cover"
                 />
               ) : null}
-              {username ?? "Profile"}
+              <span className={avatarUrl ? "hidden sm:inline" : ""}>
+                {username ?? "Profile"}
+              </span>
             </Link>
           </nav>
         ) : (
