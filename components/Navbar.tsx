@@ -10,14 +10,23 @@ export default async function Navbar() {
 
   let username: string | null = null;
   let avatarUrl: string | null = null;
+  let pendingRequests = 0;
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("username, avatar_url")
-      .eq("id", user.id)
-      .single();
+    const [{ data: profile }, { count }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("username, avatar_url")
+        .eq("id", user.id)
+        .single(),
+      supabase
+        .from("contacts")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", user.id)
+        .eq("status", "pending"),
+    ]);
     username = profile?.username ?? null;
     avatarUrl = profile?.avatar_url ?? null;
+    pendingRequests = count ?? 0;
   }
 
   return (
@@ -40,8 +49,21 @@ export default async function Navbar() {
             <Link href="/races" className="text-paper/80 hover:text-paper">
               Races
             </Link>
-            <Link href="/messages" className="text-paper/80 hover:text-paper">
+            <Link
+              href="/messages"
+              className="relative text-paper/80 hover:text-paper"
+              aria-label={
+                pendingRequests > 0
+                  ? `Messages, ${pendingRequests} new contact request${pendingRequests === 1 ? "" : "s"}`
+                  : undefined
+              }
+            >
               Messages
+              {pendingRequests > 0 && (
+                <span className="absolute -right-2 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-flag-red px-1 font-mono text-[9px] font-medium leading-none text-paper">
+                  {pendingRequests > 9 ? "9+" : pendingRequests}
+                </span>
+              )}
             </Link>
             <Link
               href="/profile"
