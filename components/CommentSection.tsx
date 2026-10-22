@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ReportButton from "@/components/ReportButton";
@@ -141,9 +142,16 @@ export default function CommentSection({
             const mine = c.author_id === userId;
             return (
               <div key={c.id} className="text-sm">
-                <span className="font-medium text-paper">
-                  {c.author?.username ?? "fan"}
-                </span>{" "}
+                {c.author ? (
+                  <Link
+                    href={`/users/${c.author_id}`}
+                    className="font-medium text-paper hover:text-flag-amber hover:underline"
+                  >
+                    {c.author.username}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-paper">fan</span>
+                )}{" "}
                 <span className="text-paper/40">
                   · {new Date(c.created_at).toLocaleString()}
                 </span>
