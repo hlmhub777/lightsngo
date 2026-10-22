@@ -15,7 +15,7 @@ export default async function MessagesPage() {
   const { data: rows } = await supabase
     .from("contacts")
     .select(
-      "id, status, requester_id, recipient_id, requester:profiles!contacts_requester_id_fkey(id, username, avatar_url), recipient:profiles!contacts_recipient_id_fkey(id, username, avatar_url)"
+      "id, status, requester_id, recipient_id, note, requester:profiles!contacts_requester_id_fkey(id, username, avatar_url), recipient:profiles!contacts_recipient_id_fkey(id, username, avatar_url)"
     )
     .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`);
 
@@ -53,17 +53,27 @@ export default async function MessagesPage() {
             {incomingRequests.map((r: any) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between rounded-sm border border-asphalt-700 bg-asphalt-900 px-3 py-2"
+                className="rounded-sm border border-asphalt-700 bg-asphalt-900 px-3 py-2"
               >
-                <span className="inline-flex items-center gap-3 text-sm text-paper">
-                  <Avatar
-                    url={r.requester.avatar_url}
-                    name={r.requester.username}
-                    size={32}
-                  />
-                  {r.requester.username}
-                </span>
-                <AcceptContactButton contactRowId={r.id} />
+                <div className="flex items-center justify-between gap-3">
+                  <Link
+                    href={`/users/${r.requester.id}`}
+                    className="inline-flex items-center gap-3 text-sm text-paper hover:text-flag-amber"
+                  >
+                    <Avatar
+                      url={r.requester.avatar_url}
+                      name={r.requester.username}
+                      size={32}
+                    />
+                    {r.requester.username}
+                  </Link>
+                  <AcceptContactButton contactRowId={r.id} />
+                </div>
+                {r.note && (
+                  <p className="mt-2 whitespace-pre-wrap pl-11 text-sm italic text-paper/80">
+                    &ldquo;{r.note}&rdquo;
+                  </p>
+                )}
               </div>
             ))}
           </div>
