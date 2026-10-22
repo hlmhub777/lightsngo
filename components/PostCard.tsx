@@ -68,7 +68,11 @@ export default function PostCard({
   return (
     <article className="rounded-sm border border-asphalt-700 bg-asphalt-900 p-4">
       <div className="flex items-center gap-3">
-        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-asphalt-700">
+        <Link
+          href={post.author ? `/users/${post.author_id}` : "#"}
+          aria-label={post.author ? `View ${post.author.username}'s profile` : undefined}
+          className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-asphalt-700"
+        >
           {post.author?.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -81,11 +85,18 @@ export default function PostCard({
               {initials}
             </div>
           )}
-        </div>
+        </Link>
         <div className="flex-1">
-          <p className="text-sm font-medium text-paper">
-            {post.author?.username ?? "Deleted user"}
-          </p>
+          {post.author ? (
+            <Link
+              href={`/users/${post.author_id}`}
+              className="text-sm font-medium text-paper hover:text-flag-amber hover:underline"
+            >
+              {post.author.username}
+            </Link>
+          ) : (
+            <p className="text-sm font-medium text-paper">Deleted user</p>
+          )}
           <p className="text-xs text-paper/50">
             {new Date(post.created_at).toLocaleString()}
           </p>
