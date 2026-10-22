@@ -35,7 +35,7 @@ export default async function UserProfilePage({
   const [{ data: contactRow }, { data: blockRow }] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, status, requester_id")
+      .select("id, status, requester_id, note")
       .or(
         `and(requester_id.eq.${user.id},recipient_id.eq.${profile.id}),and(requester_id.eq.${profile.id},recipient_id.eq.${user.id})`
       )
@@ -87,15 +87,28 @@ export default async function UserProfilePage({
     );
   } else if (contactRow) {
     action = (
-      <div className="flex items-center gap-3">
+      <div className="flex w-full flex-col gap-2 rounded-sm border border-asphalt-700 bg-asphalt-900 p-3">
         <span className="text-sm text-paper/70">
           {profile.username} wants to connect.
         </span>
-        <AcceptContactButton contactRowId={contactRow.id} />
+        {contactRow.note && (
+          <p className="whitespace-pre-wrap text-sm italic text-paper/90">
+            &ldquo;{contactRow.note}&rdquo;
+          </p>
+        )}
+        <div>
+          <AcceptContactButton contactRowId={contactRow.id} />
+        </div>
       </div>
     );
   } else {
-    action = <AddContactButton userId={user.id} otherId={profile.id} />;
+    action = (
+      <AddContactButton
+        userId={user.id}
+        otherId={profile.id}
+        otherName={profile.username}
+      />
+    );
   }
 
   return (
