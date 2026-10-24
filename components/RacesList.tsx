@@ -17,6 +17,71 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+// Extra words people type when searching (abbreviations, nicknames,
+// track names). Keys are a country or city as stored in race_events,
+// written without accents and in lowercase.
+const SEARCH_ALIASES: Record<string, string[]> = {
+  // countries
+  "united states": ["usa", "us", "u.s.", "u.s.a.", "america", "american", "states"],
+  "united kingdom": ["uk", "britain", "great britain", "gb", "england", "british"],
+  "great britain": ["uk", "britain", "united kingdom", "gb", "england", "british"],
+  "united arab emirates": ["uae", "emirates"],
+  "saudi arabia": ["saudi", "ksa"],
+  "netherlands": ["holland", "dutch"],
+  "mexico": ["mex"],
+  "brazil": ["brasil"],
+  "spain": ["espana"],
+  "italy": ["italia"],
+  "monaco": ["monte carlo"],
+  // cities / circuits
+  "austin": ["texas", "cota", "circuit of the americas"],
+  "miami": ["florida"],
+  "las vegas": ["vegas", "nevada"],
+  "mexico city": ["cdmx", "hermanos rodriguez"],
+  "sao paulo": ["interlagos"],
+  "abu dhabi": ["yas marina", "uae"],
+  "jeddah": ["saudi"],
+  "lusail": ["doha", "qatar"],
+  "sakhir": ["bahrain"],
+  "silverstone": ["uk", "britain", "british"],
+  "spielberg": ["red bull ring", "austria"],
+  "spa": ["spa-francorchamps", "belgium"],
+  "spa-francorchamps": ["spa", "belgium"],
+  "zandvoort": ["holland", "dutch"],
+  "monza": ["italia"],
+  "imola": ["italia"],
+  "baku": ["azerbaijan"],
+  "suzuka": ["japan"],
+  "shanghai": ["china"],
+  "melbourne": ["australia", "albert park"],
+  "montreal": ["canada"],
+  "barcelona": ["catalunya", "spain"],
+  "madrid": ["madring", "spain"],
+  "budapest": ["hungaroring", "hungary"],
+  "singapore": ["marina bay"],
+};
+
+// Lowercase and strip accents, so "Sao Paulo" finds "São Paulo".
+function normalize(text: string) {
+  return text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function searchText(race: Race) {
+  const city = normalize(race.city);
+  const country = normalize(race.country);
+  return [
+    normalize(race.name),
+    city,
+    country,
+    ...(SEARCH_ALIASES[city] ?? []),
+    ...(SEARCH_ALIASES[country] ?? []),
+  ].join(" | ");
+}
+
 export default function RacesList({ races }: { races: Race[] }) {
   const [query, setQuery] = useState("");
   const [month, setMonth] = useState<string>("all");
@@ -30,13 +95,9 @@ export default function RacesList({ races }: { races: Race[] }) {
   }, [races]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = normalize(query);
     return races.filter((r) => {
-      const matchesQuery =
-        !q ||
-        r.name.toLowerCase().includes(q) ||
-        r.city.toLowerCase().includes(q) ||
-        r.country.toLowerCase().includes(q);
+      const matchesQuery = !q || searchText(r).includes(q);
 
       const matchesMonth =
         month === "all" ||
