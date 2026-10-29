@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyAuthError } from "@/lib/authErrors";
 import PasswordInput from "@/components/PasswordInput";
 
 export default function ResetPasswordPage() {
@@ -46,7 +47,7 @@ export default function ResetPasswordPage() {
     setLoading(false);
 
     if (updateError) {
-      setError(updateError.message);
+      setError(friendlyAuthError(updateError));
       return;
     }
 

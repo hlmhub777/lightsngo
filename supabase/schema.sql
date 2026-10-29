@@ -43,11 +43,36 @@ create policy "Users can insert their own profile"
 -- Auto-create a profile row whenever someone signs up via Supabase Auth
 create or replace function public.handle_new_user()
 returns trigger as $$
+declare
+  base_name text;
+  final_name text;
+  tries int := 0;
 begin
-  insert into public.profiles (id, username, age_confirmed_18, terms_accepted_at)
+  base_name := lower(regexp_replace(
+    coalesce(
+      new.raw_user_meta_data ->> 'username',
+      split_part(new.email, '@', 1),
+      'fan'
+    ),
+    '[^a-zA-Z0-9_.]', '', 'g'
+  ));
+  if length(base_name) < 3 then
+    base_name := 'fan_' || base_name;
+  end if;
+  base_name := left(base_name, 24);
+  final_name := base_name;
+
+  while exists (select 1 from public.profiles where username = final_name) loop
+    tries := tries + 1;
+    final_name := base_name || '_' || (floor(random() * 9000) + 1000)::int;
+    exit when tries > 20;
+  end loop;
+
+  insert into public.profiles (id, username, birth_year, age_confirmed_18, terms_accepted_at)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data ->> 'username', split_part(new.email, '@', 1)),
+    final_name,
+    nullif(new.raw_user_meta_data ->> 'birth_year', '')::int,
     coalesce((new.raw_user_meta_data ->> 'age_confirmed_18')::boolean, false),
     case
       when (new.raw_user_meta_data ->> 'terms_accepted')::boolean is true then now()
@@ -56,7 +81,7 @@ begin
   );
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 create trigger on_auth_user_created
   after insert on auth.users
@@ -96,6 +121,7 @@ create table public.posts (
   race_event_id uuid references public.race_events(id) on delete set null,
   content text not null,
   image_url text,
+  video_url text,
   created_at timestamptz not null default now()
 );
 

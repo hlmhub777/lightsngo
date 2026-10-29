@@ -14,7 +14,7 @@ export default async function FeedPage() {
   const { data: posts } = await supabase
     .from("posts")
     .select(
-      "id, content, created_at, author_id, author:profiles(username, avatar_url), race_event:race_events(slug, name, city)"
+      "id, content, image_url, video_url, created_at, author_id, author:profiles(username, avatar_url), race_event:race_events(slug, name, city)"
     )
     .order("created_at", { ascending: false })
     .limit(50);

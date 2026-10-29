@@ -6,6 +6,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import Captcha, { type CaptchaHandle } from "@/components/Captcha";
 import PasswordInput from "@/components/PasswordInput";
+import GoogleButton from "@/components/GoogleButton";
+import { friendlyAuthError } from "@/lib/authErrors";
 
 const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
 
@@ -30,6 +32,7 @@ export default function SignupPage() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkEmail, setCheckEmail] = useState(false);
   const captchaRef = useRef<CaptchaHandle>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -56,7 +59,7 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -73,9 +76,24 @@ export default function SignupPage() {
     setLoading(false);
 
     if (signUpError) {
-      setError(signUpError.message);
+      setError(friendlyAuthError(signUpError));
       setCaptchaToken(null);
       captchaRef.current?.reset();
+      return;
+    }
+
+    // Supabase doesn't error for an email that's already registered (to avoid
+    // leaking accounts); it returns a user with no identities instead.
+    if (data.user && (data.user.identities?.length ?? 0) === 0) {
+      setError("An account with this email already exists. Try logging in instead.");
+      setCaptchaToken(null);
+      captchaRef.current?.reset();
+      return;
+    }
+
+    // Email confirmation is on: no session yet, they need to click the link.
+    if (!data.session) {
+      setCheckEmail(true);
       return;
     }
 
@@ -93,7 +111,29 @@ export default function SignupPage() {
         visited, and photo after this.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
+      {checkEmail ? (
+        <div className="mt-8 rounded-sm border border-asphalt-600 bg-asphalt-900 p-4 text-sm text-paper/80">
+          <p className="font-medium text-paper">Almost there! 🏁</p>
+          <p className="mt-2">
+            We sent a confirmation link to <span className="text-flag-amber">{email}</span>.
+            Click it to activate your account, then log in. Can&rsquo;t find it? Check your spam folder.
+          </p>
+        </div>
+      ) : (
+      <>
+      <div className="mt-8">
+        <GoogleButton label="Sign up with Google" onError={setError} />
+        <p className="mt-2 text-xs text-paper/50">
+          With Google you&rsquo;ll confirm your birth year (18+) on the next step.
+        </p>
+        <div className="my-6 flex items-center gap-3 text-xs text-paper/40">
+          <span className="h-px flex-1 bg-asphalt-600" />
+          or with email
+          <span className="h-px flex-1 bg-asphalt-600" />
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="mb-1 block text-sm text-paper/70">Username</label>
           <input
@@ -183,6 +223,8 @@ export default function SignupPage() {
           {loading ? "Creating account…" : "Create account"}
         </button>
       </form>
+      </>
+      )}
 
       <p className="mt-6 text-sm text-paper/60">
         Already have an account?{" "}
