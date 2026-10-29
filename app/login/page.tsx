@@ -1,11 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import Captcha, { type CaptchaHandle } from "@/components/Captcha";
 import PasswordInput from "@/components/PasswordInput";
+import GoogleButton from "@/components/GoogleButton";
+import { friendlyAuthError } from "@/lib/authErrors";
 
 const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
 
@@ -18,7 +20,26 @@ export default function LoginPage() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
   const captchaRef = useRef<CaptchaHandle>(null);
+
+  // Errors passed back from the Google sign-in callback (?error=...).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const e = params.get("error");
+    if (e) setError(friendlyAuthError({ code: e, message: e }));
+  }, []);
+
+  async function resendConfirmation() {
+    setInfo(null);
+    const { error: resendError } = await supabase.auth.resend({
+      type: "signup",
+      email,
+    });
+    if (resendError) setError(friendlyAuthError(resendError));
+    else setInfo("We sent you a new confirmation email. Check your inbox (and spam).");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,7 +61,9 @@ export default function LoginPage() {
     setLoading(false);
 
     if (signInError) {
-      setError(signInError.message);
+      setNeedsConfirm(signInError.code === "email_not_confirmed" ||
+        /email not confirmed/i.test(signInError.message));
+      setError(friendlyAuthError(signInError));
       setCaptchaToken(null);
       captchaRef.current?.reset();
       return;
@@ -54,7 +77,16 @@ export default function LoginPage() {
     <div className="mx-auto max-w-sm px-4 py-16">
       <h1 className="font-display text-3xl font-700 text-paper">Log in</h1>
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
+      <div className="mt-8">
+        <GoogleButton label="Log in with Google" onError={setError} />
+        <div className="my-6 flex items-center gap-3 text-xs text-paper/40">
+          <span className="h-px flex-1 bg-asphalt-600" />
+          or with email
+          <span className="h-px flex-1 bg-asphalt-600" />
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="mb-1 block text-sm text-paper/70">Email</label>
           <input
@@ -85,6 +117,16 @@ export default function LoginPage() {
         />
 
         {error && <p className="text-sm text-flag-red">{error}</p>}
+        {needsConfirm && email && (
+          <button
+            type="button"
+            onClick={resendConfirmation}
+            className="self-start text-sm text-flag-amber hover:underline"
+          >
+            Resend confirmation email
+          </button>
+        )}
+        {info && <p className="text-sm text-paper/70">{info}</p>}
 
         <button
           type="submit"

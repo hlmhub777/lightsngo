@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyAuthError } from "@/lib/authErrors";
 import Captcha, { type CaptchaHandle } from "@/components/Captcha";
 
 const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY;
@@ -39,7 +40,7 @@ export default function ForgotPasswordPage() {
     setLoading(false);
 
     if (resetError) {
-      setError(resetError.message);
+      setError(friendlyAuthError(resetError));
       setCaptchaToken(null);
       captchaRef.current?.reset();
       return;
