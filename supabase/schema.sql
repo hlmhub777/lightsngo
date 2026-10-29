@@ -121,6 +121,7 @@ create table public.posts (
   race_event_id uuid references public.race_events(id) on delete set null,
   content text not null,
   image_url text,
+  video_url text,
   created_at timestamptz not null default now()
 );
 

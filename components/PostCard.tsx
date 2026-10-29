@@ -11,6 +11,8 @@ import ReportButton from "@/components/ReportButton";
 type Post = {
   id: string;
   content: string;
+  image_url?: string | null;
+  video_url?: string | null;
   created_at: string;
   author_id: string;
   author: { username: string; avatar_url: string | null } | null;
@@ -141,9 +143,29 @@ export default function PostCard({
         )}
       </div>
 
-      <p className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed text-paper/90">
-        {post.content}
-      </p>
+      {post.content && (
+        <p className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed text-paper/90">
+          {post.content}
+        </p>
+      )}
+
+      {post.video_url ? (
+        <video
+          src={post.video_url}
+          controls
+          playsInline
+          preload="metadata"
+          className="mt-3 max-h-[32rem] w-full rounded-sm bg-black"
+        />
+      ) : post.image_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={post.image_url}
+          alt=""
+          loading="lazy"
+          className="mt-3 max-h-[32rem] w-full rounded-sm bg-black object-contain"
+        />
+      ) : null}
 
       {error && <p className="mt-2 text-sm text-flag-red">{error}</p>}
 
