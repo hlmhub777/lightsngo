@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import ReportButton from "@/components/ReportButton";
+import Link from "next/link";
 import Avatar from "@/components/Avatar";
 
 type Message = {
@@ -218,13 +219,17 @@ export default function ChatWindow({
               className={`flex gap-2 ${mine ? "justify-end" : "justify-start"}`}
             >
               {!mine && (
-                <div className="pt-1">
+                <Link
+                  href={`/users/${m.author_id}`}
+                  title="View profile"
+                  className="pt-1"
+                >
                   <Avatar
                     url={m.author_avatar_url}
                     name={m.author_username ?? "?"}
                     size={28}
                   />
-                </div>
+                </Link>
               )}
               <div
                 className={`flex max-w-[75%] flex-col ${
@@ -237,9 +242,12 @@ export default function ChatWindow({
                 }`}
               >
                 {!mine && (
-                  <p className="mb-0.5 font-mono text-[11px] opacity-60">
+                  <Link
+                    href={`/users/${m.author_id}`}
+                    className="mb-0.5 block font-mono text-[11px] opacity-60 hover:underline hover:opacity-100"
+                  >
                     {m.author_username ?? "fan"}
-                  </p>
+                  </Link>
                 )}
                 <p>{m.content}</p>
               </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import ReportButton from "@/components/ReportButton";
 
@@ -258,10 +259,14 @@ export default function DMWindow({
   return (
     <div className="flex h-[70vh] flex-col rounded-sm border border-asphalt-700 bg-asphalt-900">
       <div className="relative flex items-center justify-between border-b border-asphalt-700 px-4 py-2.5">
-        <span className="inline-flex items-center gap-3 text-sm text-paper">
+        <Link
+          href={`/users/${otherUserId}`}
+          title={`View ${otherUsername}'s profile`}
+          className="inline-flex items-center gap-3 text-sm text-paper hover:text-flag-amber"
+        >
           <Avatar url={otherAvatarUrl} name={otherUsername} size={32} />
           {otherUsername}
-        </span>
+        </Link>
         <button
           type="button"
           onClick={() => setMenuOpen((o) => !o)}
