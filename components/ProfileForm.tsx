@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import AvatarUpload from "@/components/AvatarUpload";
+import { CIRCUITS } from "@/lib/circuits";
 
 type Profile = {
   id: string;
@@ -50,9 +51,29 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
     birth_year: profile.birth_year ? String(profile.birth_year) : "",
     favorite_team: profile.favorite_team ?? "",
     favorite_driver: profile.favorite_driver ?? "",
-    tracks_visited: (profile.tracks_visited ?? []).join(", "),
     bio: profile.bio ?? "",
   });
+  const [tracks, setTracks] = useState<string[]>(profile.tracks_visited ?? []);
+  const [otherTrack, setOtherTrack] = useState("");
+
+  function toggleTrack(name: string) {
+    setTracks((list) =>
+      list.some((t) => t.toLowerCase() === name.toLowerCase())
+        ? list.filter((t) => t.toLowerCase() !== name.toLowerCase())
+        : [...list, name]
+    );
+    setSaved(false);
+  }
+
+  function addOtherTrack() {
+    const name = otherTrack.trim().slice(0, 40);
+    if (!name) return;
+    if (!tracks.some((t) => t.toLowerCase() === name.toLowerCase())) {
+      setTracks((list) => [...list, name]);
+      setSaved(false);
+    }
+    setOtherTrack("");
+  }
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,9 +110,7 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
         birth_year: year,
         favorite_team: form.favorite_team || null,
         favorite_driver: form.favorite_driver || null,
-        tracks_visited: form.tracks_visited
-          ? form.tracks_visited.split(",").map((t) => t.trim()).filter(Boolean)
-          : [],
+        tracks_visited: tracks,
         bio: form.bio || null,
       })
       .eq("id", profile.id);
@@ -175,7 +194,8 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
           ))}
         </select>
         <span className="mt-1 block text-xs text-paper/50">
-          Required to confirm you&rsquo;re 18+.
+          Required to confirm you&rsquo;re 18+. Other fans see your age, not
+          your birth year.
         </span>
       </Field>
 
@@ -204,14 +224,70 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
         </Field>
       </div>
 
-      <Field label="Tracks you've been to">
-        <input
-          value={form.tracks_visited}
-          onChange={(e) => update("tracks_visited", e.target.value)}
-          className="input"
-          placeholder="Tracks you've visited, separated by commas"
-        />
-      </Field>
+      <div>
+        <span className="mb-1 block text-sm text-paper/70">
+          Races you&rsquo;ve been to 🏁
+        </span>
+        <span className="mb-2 block text-xs text-paper/50">
+          Tap every track you&rsquo;ve watched a race at. They show as badges
+          on your profile.
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {CIRCUITS.map((c) => {
+            const on = tracks.some((t) => t.toLowerCase() === c.name.toLowerCase());
+            return (
+              <button
+                key={c.name}
+                type="button"
+                onClick={() => toggleTrack(c.name)}
+                aria-pressed={on}
+                className={
+                  "rounded-sm border px-2 py-1 text-xs transition " +
+                  (on
+                    ? "border-flag-red bg-flag-red/15 text-paper"
+                    : "border-asphalt-600 text-paper/60 hover:border-paper/40 hover:text-paper")
+                }
+              >
+                {c.flag} {c.name}
+              </button>
+            );
+          })}
+          {tracks
+            .filter((t) => !CIRCUITS.some((c) => c.name.toLowerCase() === t.toLowerCase()))
+            .map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => toggleTrack(t)}
+                aria-pressed
+                className="rounded-sm border border-flag-red bg-flag-red/15 px-2 py-1 text-xs text-paper"
+              >
+                🏁 {t} ✕
+              </button>
+            ))}
+        </div>
+        <div className="mt-2 flex gap-2">
+          <input
+            value={otherTrack}
+            onChange={(e) => setOtherTrack(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addOtherTrack();
+              }
+            }}
+            className="input"
+            placeholder="Another track (e.g. Nürburgring)"
+          />
+          <button
+            type="button"
+            onClick={addOtherTrack}
+            className="shrink-0 rounded-sm border border-asphalt-600 px-3 text-sm text-paper/80 hover:border-paper/40"
+          >
+            Add
+          </button>
+        </div>
+      </div>
 
       <Field label="Bio">
         <textarea
