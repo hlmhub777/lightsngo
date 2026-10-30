@@ -87,14 +87,27 @@ export default async function MessagesPage() {
         <div className="mt-2 flex flex-col gap-1">
           {accepted.length > 0 ? (
             accepted.map((c: any) => (
-              <Link
+              <div
                 key={c.id}
-                href={`/messages/${c.id}`}
-                className="flex items-center gap-3 rounded-sm px-3 py-2 hover:bg-asphalt-900"
+                className="flex items-center justify-between gap-3 rounded-sm px-3 py-2 hover:bg-asphalt-900"
               >
-                <Avatar url={c.avatar_url} name={c.username} size={36} />
-                <span className="text-sm text-paper">{c.username}</span>
-              </Link>
+                <Link
+                  href={`/users/${c.id}`}
+                  title={`View ${c.username}'s profile`}
+                  className="flex min-w-0 items-center gap-3 hover:text-flag-amber"
+                >
+                  <Avatar url={c.avatar_url} name={c.username} size={36} />
+                  <span className="truncate text-sm text-paper hover:text-flag-amber">
+                    {c.username}
+                  </span>
+                </Link>
+                <Link
+                  href={`/messages/${c.id}`}
+                  className="shrink-0 rounded-sm bg-flag-red px-3 py-1.5 text-xs font-medium text-paper hover:bg-flag-red/90"
+                >
+                  Message
+                </Link>
+              </div>
             ))
           ) : (
             <p className="px-3 py-2 text-sm text-paper/40">
@@ -112,9 +125,10 @@ export default async function MessagesPage() {
           </h2>
           <div className="mt-2 flex flex-col gap-1">
             {outgoingRequests.map((r: any) => (
-              <div
+              <Link
                 key={r.id}
-                className="flex items-center gap-3 px-3 py-2 text-sm text-paper/40"
+                href={`/users/${r.recipient.id}`}
+                className="flex items-center gap-3 px-3 py-2 text-sm text-paper/40 hover:text-paper/70"
               >
                 <span className="opacity-60">
                   <Avatar
@@ -124,7 +138,7 @@ export default async function MessagesPage() {
                   />
                 </span>
                 {r.recipient.username} — waiting for them to accept
-              </div>
+              </Link>
             ))}
           </div>
         </div>
