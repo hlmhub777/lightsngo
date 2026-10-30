@@ -5,6 +5,7 @@ import Avatar from "@/components/Avatar";
 import AddContactButton from "@/components/AddContactButton";
 import AcceptContactButton from "@/components/AcceptContactButton";
 import ReportButton from "@/components/ReportButton";
+import { ageFromBirthYear, circuitFlag } from "@/lib/circuits";
 
 export const metadata = {
   title: "Fan profile — LightsNGo",
@@ -25,7 +26,7 @@ export default async function UserProfilePage({
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, username, avatar_url, country, favorite_team, favorite_driver, tracks_visited, bio, created_at"
+      "id, username, avatar_url, country, birth_year, favorite_team, favorite_driver, tracks_visited, bio, created_at"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -53,11 +54,23 @@ export default async function UserProfilePage({
     { month: "long", year: "numeric" }
   );
 
+  const age = ageFromBirthYear(profile.birth_year);
   const details = [
+    { label: "Age", value: age ? String(age) : null },
     { label: "Country", value: profile.country },
-    { label: "Favourite team", value: profile.favorite_team },
-    { label: "Favourite driver", value: profile.favorite_driver },
-  ].filter((d) => d.value);
+    { label: "Team", value: profile.favorite_team },
+    { label: "Driver", value: profile.favorite_driver },
+  ];
+  const sharedCount = details.filter((d) => d.value).length + (tracks.length ? 1 : 0);
+
+  const { data: recentPosts, count: postCount } = await supabase
+    .from("posts")
+    .select("id, content, image_url, video_url, created_at, race_event:race_events(name)", {
+      count: "exact",
+    })
+    .eq("author_id", profile.id)
+    .order("created_at", { ascending: false })
+    .limit(3);
 
   let action: React.ReactNode;
   if (blockRow) {
@@ -137,17 +150,27 @@ export default async function UserProfilePage({
         />
       </div>
 
-      {details.length > 0 && (
-        <dl className="mt-6 grid grid-cols-1 gap-3 rounded-sm border border-asphalt-700 bg-asphalt-900 p-4 sm:grid-cols-3">
-          {details.map((d) => (
-            <div key={d.label}>
-              <dt className="font-mono text-[11px] uppercase tracking-wider text-paper/40">
-                {d.label}
-              </dt>
-              <dd className="mt-0.5 text-sm text-paper">{d.value}</dd>
-            </div>
-          ))}
-        </dl>
+      <dl className="mt-6 grid grid-cols-2 gap-3 rounded-sm border border-asphalt-700 bg-asphalt-900 p-4 sm:grid-cols-4">
+        {details.map((d) => (
+          <div key={d.label} className="min-w-0">
+            <dt className="font-mono text-[11px] uppercase tracking-wider text-paper/40">
+              {d.label}
+            </dt>
+            <dd
+              className={
+                "mt-0.5 truncate text-sm " + (d.value ? "text-paper" : "text-paper/30")
+              }
+            >
+              {d.value ?? "—"}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      {sharedCount === 0 && (
+        <p className="mt-3 text-sm text-paper/50">
+          {profile.username} hasn&rsquo;t filled in their fan card yet.
+        </p>
       )}
 
       {profile.bio && (
@@ -156,23 +179,59 @@ export default async function UserProfilePage({
         </p>
       )}
 
-      {tracks.length > 0 && (
-        <div className="mt-6">
-          <h2 className="font-mono text-[11px] uppercase tracking-wider text-paper/40">
-            Tracks visited
-          </h2>
+      <div className="mt-6">
+        <h2 className="font-mono text-[11px] uppercase tracking-wider text-paper/40">
+          Races attended{tracks.length > 0 ? ` · ${tracks.length}` : ""}
+        </h2>
+        {tracks.length > 0 ? (
           <div className="mt-2 flex flex-wrap gap-2">
             {tracks.map((t) => (
               <span
                 key={t}
-                className="rounded-sm border border-asphalt-600 px-2 py-1 text-xs text-paper/80"
+                className="rounded-sm border border-asphalt-600 bg-asphalt-900 px-2 py-1 text-xs text-paper/85"
               >
-                {t}
+                {circuitFlag(t)} {t}
               </span>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="mt-2 text-sm text-paper/30">No races added yet.</p>
+        )}
+      </div>
+
+      <div className="mt-6">
+        <h2 className="font-mono text-[11px] uppercase tracking-wider text-paper/40">
+          Posts · {postCount ?? 0}
+        </h2>
+        {recentPosts && recentPosts.length > 0 ? (
+          <ul className="mt-2 flex flex-col gap-2">
+            {recentPosts.map((p: any) => (
+              <li
+                key={p.id}
+                className="rounded-sm border border-asphalt-700 bg-asphalt-900 px-3 py-2"
+              >
+                <p className="line-clamp-3 whitespace-pre-wrap text-sm text-paper/85">
+                  {p.content || (p.video_url ? "🎥 Video" : p.image_url ? "📷 Photo" : "")}
+                </p>
+                <p className="mt-1 text-xs text-paper/40">
+                  {new Date(p.created_at).toLocaleDateString(undefined, {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                  {p.race_event?.name ? ` · ${p.race_event.name}` : ""}
+                  {p.content && (p.video_url || p.image_url)
+                    ? p.video_url
+                      ? " · 🎥"
+                      : " · 📷"
+                    : ""}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm text-paper/30">No posts yet.</p>
+        )}
+      </div>
     </div>
   );
 }
