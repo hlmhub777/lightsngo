@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "@/components/ProfileForm";
 import DeleteAccountButton from "@/components/DeleteAccountButton";
 import BlockedUsersList from "@/components/BlockedUsersList";
+import FanCard from "@/components/FanCard";
+import ShareFanCardButton from "@/components/ShareFanCardButton";
+import { POINTS, getFanCardData } from "@/lib/fanCard";
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -33,6 +36,8 @@ export default async function ProfilePage() {
     );
   }
 
+  const card = await getFanCardData(supabase, profile);
+
   return (
     <div className="mx-auto max-w-lg px-4 py-8">
       <div className="flex items-center justify-between">
@@ -54,7 +59,36 @@ export default async function ProfilePage() {
         </Link>
       </p>
 
-      <div className="mt-6">
+      <section className="mt-6">
+        <h2 className="mb-3 font-mono text-xs uppercase tracking-widest text-paper/50">
+          Your fan card
+        </h2>
+        <FanCard card={card} />
+        <div className="mt-4">
+          <ShareFanCardButton userId={profile.id} username={profile.username} />
+        </div>
+        <details className="mt-4 rounded-sm border border-asphalt-700 bg-asphalt-900 px-3 py-2 text-sm text-paper/70">
+          <summary className="cursor-pointer text-paper/85">How to earn points</summary>
+          <ul className="mt-2 space-y-1">
+            <li>🏁 Race you&rsquo;ve been to: +{POINTS.raceAttended}</li>
+            <li>🗺️ Tip in a city guide: +{POINTS.guideTip}</li>
+            <li>📝 Post on the feed: +{POINTS.post}</li>
+            <li>❤️ Like from another fan: +{POINTS.likeReceived}</li>
+            <li>✅ Complete profile (photo, country, birth year, team, driver): +{POINTS.completeProfile}</li>
+          </ul>
+          <p className="mt-2 text-paper/50">
+            Levels: Rookie → Racer (250) → Podium (1,000) → Legend (3,000).
+            New card designs unlock with your level soon.
+          </p>
+        </details>
+        <p className="mt-3 rounded-sm border border-dashed border-flag-amber/40 px-3 py-2 text-sm text-paper/70">
+          <span className="font-medium text-flag-amber">Coming soon:</span>{" "}
+          your fan card printed as a real card or sticker, with a QR code to
+          your profile. It will be available later for a small fee.
+        </p>
+      </section>
+
+      <div className="mt-8">
         <ProfileForm profile={profile} />
       </div>
 
