@@ -34,3 +34,16 @@ body {
   border-radius: 10px 10px 10px 2px;
   border: 1px solid #262c35;
 }
+
+/* Fan card: Legend frame slowly shimmers. */
+.fan-card-legend {
+  background-size: 300% 300% !important;
+  animation: fan-card-shimmer 6s ease-in-out infinite;
+}
+@keyframes fan-card-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fan-card-legend { animation: none; }
+}

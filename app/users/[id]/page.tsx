@@ -6,6 +6,8 @@ import AddContactButton from "@/components/AddContactButton";
 import AcceptContactButton from "@/components/AcceptContactButton";
 import ReportButton from "@/components/ReportButton";
 import { ageFromBirthYear, circuitFlag } from "@/lib/circuits";
+import FanCard from "@/components/FanCard";
+import { getFanCardData } from "@/lib/fanCard";
 
 export const metadata = {
   title: "Fan profile — LightsNGo",
@@ -62,6 +64,8 @@ export default async function UserProfilePage({
     { label: "Driver", value: profile.favorite_driver },
   ];
   const sharedCount = details.filter((d) => d.value).length + (tracks.length ? 1 : 0);
+
+  const card = await getFanCardData(supabase, profile);
 
   const { data: recentPosts, count: postCount } = await supabase
     .from("posts")
@@ -150,22 +154,9 @@ export default async function UserProfilePage({
         />
       </div>
 
-      <dl className="mt-6 grid grid-cols-2 gap-3 rounded-sm border border-asphalt-700 bg-asphalt-900 p-4 sm:grid-cols-4">
-        {details.map((d) => (
-          <div key={d.label} className="min-w-0">
-            <dt className="font-mono text-[11px] uppercase tracking-wider text-paper/40">
-              {d.label}
-            </dt>
-            <dd
-              className={
-                "mt-0.5 truncate text-sm " + (d.value ? "text-paper" : "text-paper/30")
-              }
-            >
-              {d.value ?? "—"}
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <div className="mt-6">
+        <FanCard card={card} />
+      </div>
 
       {sharedCount === 0 && (
         <p className="mt-3 text-sm text-paper/50">
