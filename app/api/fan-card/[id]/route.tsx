@@ -11,16 +11,16 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Loads a Google font as TTF (ImageResponse can't read woff2).
-async function loadFont(family: string, weight: number) {
+// Loads the site's display font (Rajdhani) as WOFF — the image renderer
+// can't read WOFF2. Falls back to the built-in font if it can't be fetched.
+async function loadFont(weight: 500 | 700) {
   try {
-    const css = await fetch(
-      `https://fonts.googleapis.com/css2?family=${family}:wght@${weight}`,
-      { headers: { "User-Agent": "Mozilla/5.0 (compatible; LightsNGo)" } }
-    ).then((r) => r.text());
-    const url = css.match(/src: url\((.+?)\) format\('(opentype|truetype)'\)/)?.[1];
-    if (!url) return null;
-    return await fetch(url).then((r) => r.arrayBuffer());
+    const res = await fetch(
+      `https://cdn.jsdelivr.net/npm/@fontsource/rajdhani@5.0.8/files/rajdhani-latin-${weight}-normal.woff`,
+      { cache: "force-cache" }
+    );
+    if (!res.ok) return null;
+    return await res.arrayBuffer();
   } catch {
     return null;
   }
@@ -48,7 +48,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const tag = a === "#8A94A3" ? "#E6E9EE" : a;
   const flags = card.tracks.slice(0, 8).map((t) => circuitFlag(t)).join(" ");
 
-  const [raj, rajMed] = await Promise.all([loadFont("Rajdhani", 700), loadFont("Rajdhani", 500)]);
+  const [raj, rajMed] = await Promise.all([loadFont(700), loadFont(500)]);
   const fonts = [
     raj && { name: "Rajdhani", data: raj, weight: 700 as const, style: "normal" as const },
     rajMed && { name: "Rajdhani", data: rajMed, weight: 500 as const, style: "normal" as const },
@@ -202,13 +202,13 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
                 color: "rgba(243,241,236,0.65)",
               }}
             >
-              <span>FAN {formatFanNumber(card.fanNumber)}</span>
+              <span>{`FAN ${formatFanNumber(card.fanNumber)}`}</span>
               <span>LIGHTSNGO.COM</span>
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 40, marginTop: 44, color: "rgba(243,241,236,0.7)", fontWeight: 500 }}>
-          {next ? `Next level: ${next.name}` : "Top level reached"} · get yours on lightsngo.com
+        <div style={{ display: "flex", fontSize: 40, marginTop: 44, color: "rgba(243,241,236,0.7)", fontWeight: 500 }}>
+          {`${next ? `Next level: ${next.name}` : "Top level reached"} · get yours on lightsngo.com`}
         </div>
       </div>
     ),
