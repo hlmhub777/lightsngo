@@ -5,6 +5,7 @@ import Avatar from "@/components/Avatar";
 import AddContactButton from "@/components/AddContactButton";
 import AcceptContactButton from "@/components/AcceptContactButton";
 import ReportButton from "@/components/ReportButton";
+import ContactActions from "@/components/ContactActions";
 import { ageFromBirthYear, circuitFlag } from "@/lib/circuits";
 import FanCard from "@/components/FanCard";
 import { getFanCardData } from "@/lib/fanCard";
@@ -152,6 +153,13 @@ export default async function UserProfilePage({
           reportedUsername={profile.username}
           className="text-xs text-paper/40 hover:text-flag-amber"
         />
+        {!blockRow && (
+          <ContactActions
+            otherId={profile.id}
+            otherName={profile.username}
+            isContact={contactRow?.status === "accepted"}
+          />
+        )}
       </div>
 
       <div className="mt-6">
